@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["192.168.1.5"],
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [],
@@ -20,3 +22,5 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+initOpenNextCloudflareForDev();

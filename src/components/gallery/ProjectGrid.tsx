@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   MapPin,
@@ -28,6 +28,37 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [selectedProject, setSelectedProject] = useState<ProjectItem | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
+  const [projects, setProjects] = useState<ProjectItem[]>(projectsData);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/projects", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((rows: { id: string; title: string; description: string; image: string }[] | null) => {
+        if (!active || !rows) return;
+        const localById = new Map(projectsData.map((project) => [project.id, project]));
+        const databaseProjects = rows.map((row): ProjectItem => {
+          const local = localById.get(row.id);
+          return {
+            ...(local ?? {} as ProjectItem),
+            id: row.id,
+            category: local?.category ?? "residential",
+            status: local?.status ?? "completed",
+            titleAr: row.title,
+            titleEn: local?.titleEn ?? row.title,
+            locationAr: local?.locationAr ?? "مشروع سبارك",
+            locationEn: local?.locationEn ?? "Spark Project",
+            descriptionAr: row.description,
+            descriptionEn: local?.descriptionEn ?? row.description,
+            image: row.image,
+            gallery: local?.gallery ?? [row.image],
+          };
+        });
+        setProjects(databaseProjects);
+      })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, []);
 
   const categories = [
     { key: "all", label: dict.gallery.filters.all },
@@ -37,7 +68,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
     { key: "renders", label: dict.gallery.filters.renders },
   ];
 
-  const filteredProjects = projectsData.filter((item) => {
+  const filteredProjects = projects.filter((item) => {
     if (activeCategory === "all") return true;
     if (Array.isArray(item.category)) {
       return item.category.includes(activeCategory as ProjectCategory);
@@ -103,7 +134,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
 
       {/* Projects Grid */}
       {displayProjects.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:gap-8 md:overflow-visible md:p-0 lg:grid-cols-3">
           {displayProjects.map((project) => {
             const title = isRtl ? project.titleAr : project.titleEn;
             const location = isRtl ? project.locationAr : project.locationEn;
@@ -115,7 +146,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
               <div
                 key={project.id}
                 onClick={() => handleOpenProject(project)}
-                className="bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm hover:shadow-2xl hover:border-[#C59341]/60 transition-all duration-300 flex flex-col cursor-pointer group"
+                className="min-w-[84vw] max-w-[26rem] snap-center bg-white rounded-2xl overflow-hidden border border-slate-200/90 shadow-sm hover:shadow-2xl hover:border-[#C59341]/60 transition-all duration-300 flex flex-col cursor-pointer group md:min-w-0 md:max-w-none"
               >
                 {/* Image Preview Container */}
                 <div className="relative h-64 w-full overflow-hidden bg-slate-900">
@@ -125,6 +156,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-500"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
@@ -241,6 +273,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
                   className="object-contain transition-all duration-300 drop-shadow-lg"
                   sizes="(max-width: 1024px) 100vw, 900px"
                   priority
+                  unoptimized
                 />
               </div>
 
@@ -314,6 +347,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
                         fill
                         className="object-cover"
                         sizes="96px"
+                        unoptimized
                       />
                       <span className="absolute bottom-0.5 end-0.5 px-1 py-0.2 rounded bg-black/80 text-[10px] text-white font-mono font-bold">
                         {idx + 1}

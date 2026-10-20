@@ -1,36 +1,26 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Spark website
 
-## Getting Started
+Next.js website for Spark Engineering & Contracting, configured for Cloudflare Workers with the OpenNext adapter and D1.
 
-First, run the development server:
+## Cloudflare setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Install packages with `npm install`.
+2. Create a D1 database: `npx wrangler d1 create spark-site`.
+3. Copy the returned database ID into `database_id` in `wrangler.jsonc`. The checked-in UUID is only a local-development placeholder; replace it before applying remote migrations or deploying.
+4. Create the image bucket: `npx wrangler r2 bucket create spark-site-images`.
+5. Apply the schema and initial project records: `npx wrangler d1 migrations apply spark-site --remote`.
+6. Set production secrets (use a long unique password and a separate random session secret): `npx wrangler secret put SPARK_ADMIN_PASSWORD` and `npx wrangler secret put SPARK_SESSION_SECRET`.
+7. For local work, copy `.dev.vars.example` to `.dev.vars` and replace both values. Apply a local copy of the migration with `npx wrangler d1 migrations apply spark-site --local`.
+8. Preview in the Cloudflare Workers runtime with `npm run preview`; deploy with `npm run deploy`.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The private console is at `/ar/spark-9f2a7c` (or `/en/spark-9f2a7c`) and requires the `SPARK_ADMIN_PASSWORD`. The URL is intentionally unlinked and excluded from search indexing; the password and signed, HTTP-only browser-session cookie provide access control. The login form is centered on mobile and desktop.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Projects and analytics
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Project metadata is stored in D1, and uploaded image files are stored in the `spark-site-images` R2 bucket. The first migration seeds the three existing projects. From the console, upload a JPG, PNG, WEBP, or AVIF image (up to 5 MB) with each new project. The bucket stays private; the app serves stored images through `/api/uploads/...` and saves that path with the project metadata in D1. Wrangler uses a local R2 emulator during local development.
 
-## Learn More
+The analytics tracker records each public page view (repeat visits count again) and refreshes an anonymous active-session heartbeat every 10 seconds while a public page is visible. Admin sessions and the console are excluded. The console polls both the lightweight active-session count and visit totals every 15 seconds while visible, without reloading the page. Static assets and API calls are not counted. The legacy migration preserves older unique-browser records as one visit per browser per day; exact repeat page views are recorded from the new tracker onward.
 
-To learn more about Next.js, take a look at the following resources:
+## Local development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Run `npm run dev` for Next.js development. `npm run lint` checks source formatting and common issues.

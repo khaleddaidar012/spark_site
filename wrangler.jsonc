@@ -1,0 +1,24 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "spark-website",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-20",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "images": { "binding": "IMAGES" },
+  "r2_buckets": [
+    {
+      "binding": "SPARK_IMAGES",
+      "bucket_name": "spark-site-images"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "SPARK_DB",
+      "database_name": "spark-site",
+      "database_id": "00000000-0000-4000-8000-000000000001",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "observability": { "enabled": true }
+}

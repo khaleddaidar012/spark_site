@@ -5,6 +5,7 @@ import { Locale, locales, defaultLocale, getDict } from "@/lib/i18n";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppButton } from "@/components/layout/WhatsAppButton";
+import { AnalyticsTracker } from "@/components/analytics/AnalyticsTracker";
 
 const cairo = Cairo({
   subsets: ["arabic", "latin"],
@@ -162,6 +163,7 @@ export default async function LocaleLayout({
         <main className="flex-1 w-full">{children}</main>
         <Footer locale={locale} />
         <WhatsAppButton locale={locale} />
+        <AnalyticsTracker />
       </body>
     </html>
   );

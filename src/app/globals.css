@@ -73,6 +73,121 @@ body {
   overflow-x: clip;
 }
 
+body:has(.spark-console-page) > header,
+body:has(.spark-console-page) > footer,
+body:has(.spark-console-page) > aside {
+  display: none;
+}
+
+.spark-console-page {
+  transition: background-color 240ms ease, color 240ms ease;
+}
+
+.spark-console-page[data-theme="light"] {
+  background-color: #f3f6fb;
+  color: #172033;
+}
+
+.spark-console-page[data-theme="dark"] {
+  background-color: #0b111e;
+  color: #f8fafc;
+}
+
+.spark-console-page[data-theme="light"] .console-theme-toggle,
+.spark-console-page[data-theme="light"] .console-outline-button {
+  border-color: #d5dce7;
+  background-color: #ffffff;
+  color: #334155;
+}
+
+.spark-console-page[data-theme="light"] .console-theme-toggle:hover,
+.spark-console-page[data-theme="light"] .console-outline-button:hover {
+  border-color: #c59341;
+  color: #9a681d;
+}
+
+.spark-console-page[data-theme="light"] .console-login-card,
+.spark-console-page[data-theme="light"] .console-project-form {
+  border-color: #e0e6ef;
+  background: rgba(255, 255, 255, 0.92);
+  color: #172033;
+  box-shadow: 0 18px 55px rgba(24, 39, 75, 0.08);
+}
+
+.spark-console-page[data-theme="light"] .console-login-card input,
+.spark-console-page[data-theme="light"] .console-project-form input,
+.spark-console-page[data-theme="light"] .console-project-form textarea {
+  border: 1px solid #d5dce7;
+  background-color: #ffffff;
+  color: #172033;
+}
+
+.spark-console-page[data-theme="light"] .console-project-form input[type="file"] {
+  border-color: #d5dce7;
+  background-color: #f8fafc;
+  color: #334155;
+}
+
+.spark-console-page[data-theme="light"] .console-project-form input[type="file"]::file-selector-button {
+  color: #0b111e;
+}
+
+.spark-console-page[data-theme="light"] .console-project-form .text-slate-400 {
+  color: #667085;
+}
+
+.spark-console-page[data-theme="light"] .console-live-card {
+  border-color: #b7ead2;
+  background: linear-gradient(110deg, #e9fbf2 0%, #ffffff 54%, #f7fafc 100%);
+  box-shadow: 0 18px 50px rgba(16, 110, 73, 0.08);
+}
+
+.spark-console-page[data-theme="light"] .console-live-card .text-white {
+  color: #123b2c;
+}
+
+.spark-console-page[data-theme="light"] .console-live-card .text-slate-400,
+.spark-console-page[data-theme="light"] .console-live-card .text-emerald-200 {
+  color: #547365;
+}
+
+.spark-console-page[data-theme="light"] .console-live-card .text-emerald-100 {
+  color: #08734b;
+}
+
+.spark-console-page[data-theme="light"] .console-stat-card {
+  border-color: #e0e6ef;
+  background: linear-gradient(145deg, #ffffff 0%, #f9fbfe 100%);
+  box-shadow: 0 16px 45px rgba(24, 39, 75, 0.07);
+}
+
+.spark-console-page[data-theme="light"] .console-stat-card:hover {
+  box-shadow: 0 20px 55px rgba(154, 104, 29, 0.13);
+}
+
+.spark-console-page[data-theme="light"] .console-stat-card .text-white {
+  color: #172033;
+}
+
+.spark-console-page[data-theme="light"] .console-stat-card .text-slate-400,
+.spark-console-page[data-theme="light"] .console-stat-card .text-slate-500 {
+  color: #667085;
+}
+
+.spark-console-page[data-theme="light"] .console-stat-card .text-emerald-200 {
+  color: #08734b;
+}
+
+.spark-console-page[data-theme="light"] .console-stat-card .text-rose-200 {
+  color: #be3347;
+}
+
+.spark-console-page[data-theme="light"] .console-meta,
+.spark-console-page[data-theme="light"] .console-meta .text-slate-400,
+.spark-console-page[data-theme="light"] .console-meta .text-slate-300 {
+  color: #64748b;
+}
+
 /* Arabic (RTL) body — Cairo font */
 [lang="ar"] body,
 [lang="ar"] { font-family: var(--font-cairo), system-ui, sans-serif; }
@@ -270,6 +385,14 @@ body {
     transform: translateY(0);
   }
 }
+
+@keyframes dashboard-stat-pop {
+  0% { opacity: 0.45; transform: translateY(5px) scale(0.97); filter: drop-shadow(0 0 0 rgba(222, 184, 106, 0)); }
+  65% { opacity: 1; transform: translateY(-1px) scale(1.02); filter: drop-shadow(0 0 14px rgba(222, 184, 106, 0.28)); }
+  100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 0 rgba(222, 184, 106, 0)); }
+}
+
+.animate-stat-pop { animation: dashboard-stat-pop 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
 .animate-luxury-image {
   animation: luxury-image-reveal 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
