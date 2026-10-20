@@ -1,9 +1,10 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
-import { BarChart3, CalendarDays, LogOut, Moon, Plus, RefreshCw, Sun, Trash2, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { ArrowDown, ArrowUp, BarChart3, CalendarDays, GripVertical, ImagePlus, LogOut, Moon, Plus, RefreshCw, Sun, Trash2, TrendingDown, TrendingUp, Users } from "lucide-react";
 
-type StageDraft = { id: string };
+type StageDraft = { id: string; preview?: string };
 
 type Counts = {
   daily: number;
@@ -48,6 +49,32 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
   const [busy, setBusy] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [stages, setStages] = useState<StageDraft[]>([{ id: "stage-1" }]);
+  const [draggedStage, setDraggedStage] = useState<string | null>(null);
+  const previewUrls = useRef(new Map<string, string>());
+
+  useEffect(() => () => {
+    previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    previewUrls.current.clear();
+  }, []);
+
+  function moveStage(fromId: string, toId: string) {
+    setStages((items) => {
+      const from = items.findIndex((item) => item.id === fromId);
+      const to = items.findIndex((item) => item.id === toId);
+      if (from < 0 || to < 0 || from === to) return items;
+      const reordered = [...items];
+      const [stage] = reordered.splice(from, 1);
+      reordered.splice(to, 0, stage);
+      return reordered;
+    });
+  }
+
+  function removeStage(id: string) {
+    const preview = previewUrls.current.get(id);
+    if (preview) URL.revokeObjectURL(preview);
+    previewUrls.current.delete(id);
+    setStages((items) => items.filter((item) => item.id !== id));
+  }
 
   function toggleTheme() {
     setTheme((current) => current === "light" ? "dark" : "light");
@@ -164,6 +191,8 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
     setBusy(false);
     if (!response.ok) { setMessage(result.error ?? "تعذر إضافة المشروع"); return; }
     formElement.reset();
+    previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    previewUrls.current.clear();
     setStages([{ id: crypto.randomUUID() }]);
     setMessage("تم حفظ المشروع وسيظهر في المعرض.");
   }
@@ -255,8 +284,8 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
               <label className="block space-y-2"><span>الوصف</span><textarea name="description" required maxLength={2000} rows={4} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label>
               <label className="block space-y-2"><span>صورة المشروع</span><input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200 file:me-3 file:rounded-md file:border-0 file:bg-[#C59341] file:px-3 file:py-2 file:font-bold file:text-[#0B111E]" /><span className="block text-xs text-slate-400">JPG أو PNG أو WEBP أو AVIF، بحد أقصى 5 ميجابايت.</span></label>
               <section className="space-y-4 border-t border-slate-200 pt-5" aria-label="مراحل المشروع">
-                <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-bold">مراحل تنفيذ المشروع</h3><p className="mt-1 text-xs text-slate-400">أضف صورة وعنوانًا ووصفًا لكل مرحلة.</p></div><button type="button" onClick={() => setStages((items) => [...items, { id: crypto.randomUUID() }])} disabled={stages.length >= 12} className="inline-flex items-center gap-2 rounded-lg border border-[#C59341]/40 px-3 py-2 text-sm font-bold text-[#946200] transition hover:bg-[#C59341]/10 disabled:opacity-50"><Plus className="h-4 w-4" />إضافة مرحلة</button></div>
-                {stages.map((stage, index) => <fieldset key={stage.id} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4"><legend className="sr-only">المرحلة {index + 1}</legend><div className="flex items-center justify-between"><span className="text-sm font-bold">المرحلة {index + 1}</span>{stages.length > 1 && <button type="button" onClick={() => setStages((items) => items.filter((item) => item.id !== stage.id))} aria-label={`حذف المرحلة ${index + 1}`} className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>}</div><label className="block space-y-2"><span>عنوان المرحلة</span><input name="stageTitle" required maxLength={160} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label><label className="block space-y-2"><span>وصف المرحلة</span><textarea name="stageDescription" required maxLength={2000} rows={3} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label><label className="block space-y-2"><span>صورة المرحلة</span><input name="stageImage" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200 file:me-3 file:rounded-md file:border-0 file:bg-[#C59341] file:px-3 file:py-2 file:font-bold file:text-[#0B111E]" /></label></fieldset>)}
+                <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-bold">مراحل تنفيذ المشروع</h3><p className="mt-1 text-xs text-slate-400">اسحب المراحل لتغيير ترتيبها، أو استخدم الأسهم. ستظهر بالترتيب نفسه في المعرض.</p></div><button type="button" onClick={() => setStages((items) => [...items, { id: crypto.randomUUID() }])} disabled={stages.length >= 12} className="inline-flex items-center gap-2 rounded-lg border border-[#C59341]/40 px-3 py-2 text-sm font-bold text-[#946200] transition hover:bg-[#C59341]/10 disabled:opacity-50"><Plus className="h-4 w-4" />إضافة مرحلة</button></div>
+                {stages.map((stage, index) => <fieldset key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); if (draggedStage) moveStage(draggedStage, stage.id); setDraggedStage(null); }} className={`space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition ${draggedStage === stage.id ? "opacity-50" : ""}`}><legend className="sr-only">المرحلة {index + 1}</legend><div className="flex items-center justify-between"><div className="flex items-center gap-2"><button type="button" draggable onDragStart={() => setDraggedStage(stage.id)} onDragEnd={() => setDraggedStage(null)} aria-label={`اسحب لإعادة ترتيب المرحلة ${index + 1}`} title="اسحب لإعادة الترتيب" className="cursor-grab touch-none rounded-lg p-2 text-slate-500 hover:bg-slate-200 active:cursor-grabbing"><GripVertical className="h-4 w-4" /></button><span className="text-sm font-bold">المرحلة {index + 1}</span></div><div className="flex items-center gap-1">{index > 0 && <button type="button" onClick={() => moveStage(stage.id, stages[index - 1].id)} aria-label={`نقل المرحلة ${index + 1} لأعلى`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-200"><ArrowUp className="h-4 w-4" /></button>}{index < stages.length - 1 && <button type="button" onClick={() => moveStage(stage.id, stages[index + 1].id)} aria-label={`نقل المرحلة ${index + 1} لأسفل`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-200"><ArrowDown className="h-4 w-4" /></button>}{stages.length > 1 && <button type="button" onClick={() => removeStage(stage.id)} aria-label={`حذف المرحلة ${index + 1}`} className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>}</div></div><label className="block space-y-2"><span>عنوان المرحلة</span><input name="stageTitle" required maxLength={160} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label><label className="block space-y-2"><span>وصف المرحلة</span><textarea name="stageDescription" required maxLength={2000} rows={3} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label><label className="block space-y-2"><span>صورة المرحلة</span><input name="stageImage" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required onChange={(event) => { const file = event.currentTarget.files?.[0]; const previous = previewUrls.current.get(stage.id); if (previous) URL.revokeObjectURL(previous); if (!file) { previewUrls.current.delete(stage.id); setStages((items) => items.map((item) => item.id === stage.id ? { ...item, preview: undefined } : item)); return; } const preview = URL.createObjectURL(file); previewUrls.current.set(stage.id, preview); setStages((items) => items.map((item) => item.id === stage.id ? { ...item, preview } : item)); }} className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200 file:me-3 file:rounded-md file:border-0 file:bg-[#C59341] file:px-3 file:py-2 file:font-bold file:text-[#0B111E]" />{stage.preview ? <span className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-2"><Image src={stage.preview} alt={`معاينة صورة المرحلة ${index + 1}`} width={112} height={80} unoptimized className="h-20 w-28 rounded-md object-cover" /><span className="text-xs text-slate-500">معاينة الصورة قبل الرفع</span></span> : <span className="flex items-center gap-2 text-xs text-slate-400"><ImagePlus className="h-4 w-4" />ستظهر معاينة الصورة هنا بعد اختيارها</span>}</label></fieldset>)}
               </section>
               <button disabled={busy} className="rounded-lg bg-[#C59341] px-6 py-3 font-bold text-[#0B111E]">{busy ? "جارٍ رفع الصورة وحفظ المشروع…" : "رفع وحفظ المشروع"}</button>
               {message && <p role="status" className={`text-sm ${theme === "light" ? "text-[#946200]" : "text-[#DEB86A]"}`}>{message}</p>}
