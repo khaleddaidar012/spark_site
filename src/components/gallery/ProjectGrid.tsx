@@ -13,7 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Locale, getDict } from "@/lib/i18n";
-import { projectsData, ProjectItem, ProjectCategory } from "@/data/projects";
+import { projectsData, ProjectItem, ProjectCategory, ProjectStage } from "@/data/projects";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
 
@@ -34,7 +34,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
     let active = true;
     fetch("/api/projects", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((rows: { id: string; title: string; description: string; image: string }[] | null) => {
+      .then((rows: { id: string; title: string; description: string; image: string; category?: ProjectCategory; stages?: ProjectStage[] }[] | null) => {
         if (!active || !rows) return;
         const localById = new Map(projectsData.map((project) => [project.id, project]));
         const databaseProjects = rows.map((row): ProjectItem => {
@@ -42,7 +42,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
           return {
             ...(local ?? {} as ProjectItem),
             id: row.id,
-            category: local?.category ?? "residential",
+            category: row.category ?? local?.category ?? "residential",
             status: local?.status ?? "completed",
             titleAr: row.title,
             titleEn: local?.titleEn ?? row.title,
@@ -51,7 +51,8 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
             descriptionAr: row.description,
             descriptionEn: local?.descriptionEn ?? row.description,
             image: row.image,
-            gallery: local?.gallery ?? [row.image],
+            gallery: row.stages?.length ? row.stages.map((stage) => stage.image) : local?.gallery ?? [row.image],
+            stages: row.stages?.length ? row.stages : local?.stages,
           };
         });
         setProjects(databaseProjects);

@@ -116,10 +116,21 @@ body:has(.spark-console-page) > aside {
 
 .spark-console-page[data-theme="light"] .console-login-card input,
 .spark-console-page[data-theme="light"] .console-project-form input,
-.spark-console-page[data-theme="light"] .console-project-form textarea {
+.spark-console-page[data-theme="light"] .console-project-form textarea,
+.spark-console-page[data-theme="light"] .console-project-form select {
   border: 1px solid #d5dce7;
   background-color: #ffffff;
   color: #172033;
+}
+
+.spark-console-page[data-theme="dark"] .console-project-form fieldset {
+  border-color: rgba(255, 255, 255, 0.12);
+  background-color: rgba(15, 23, 42, 0.55);
+}
+
+.spark-console-page[data-theme="dark"] .console-project-form select option {
+  background-color: #0f172a;
+  color: #f8fafc;
 }
 
 .spark-console-page[data-theme="light"] .console-project-form input[type="file"] {

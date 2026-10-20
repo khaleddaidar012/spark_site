@@ -4,45 +4,70 @@ import { hasConsoleSession, sameOrigin } from "@/lib/console-auth";
 
 export const dynamic = "force-dynamic";
 
+const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
+const categories = new Set(["structural", "finishing", "residential", "renders"]);
+const maxImageSize = 5 * 1024 * 1024;
+
+async function validateImage(file: FormDataEntryValue | null) {
+  if (!file || typeof file === "string") throw new Error("اختر صورة صالحة لكل صورة مطلوبة.");
+  const extension = extensions[file.type];
+  if (!extension || file.size === 0 || file.size > maxImageSize) throw new Error("اختر صورة JPG أو PNG أو WEBP أو AVIF بحجم لا يتجاوز 5 ميجابايت.");
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const startsWith = (...signature: number[]) => signature.every((byte, index) => bytes[index] === byte);
+  const ascii = (start: number, end: number) => String.fromCharCode(...bytes.slice(start, end));
+  const valid = file.type === "image/jpeg" ? startsWith(0xff, 0xd8, 0xff)
+    : file.type === "image/png" ? startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
+    : file.type === "image/webp" ? ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP"
+    : ascii(4, 12) === "ftypavif" || ascii(4, 12) === "ftypavis";
+  if (!valid) throw new Error("محتوى الملف لا يطابق نوع الصورة.");
+  return { bytes, extension, contentType: file.type };
+}
+
 export async function POST(request: Request) {
   if (!(await hasConsoleSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!sameOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   const form = await request.formData().catch(() => null);
-  const title = typeof form?.get("title") === "string" ? String(form.get("title")).trim() : "";
-  const description = typeof form?.get("description") === "string" ? String(form.get("description")).trim() : "";
-  const image = form?.get("image");
-  if (!title || title.length > 160 || !description || description.length > 2000 || !image || typeof image === "string") {
-    return NextResponse.json({ error: "أدخل العنوان والوصف واختر صورة للمشروع." }, { status: 400 });
+  if (!form) return NextResponse.json({ error: "بيانات النموذج غير صالحة." }, { status: 400 });
+  const title = String(form.get("title") ?? "").trim();
+  const description = String(form.get("description") ?? "").trim();
+  const category = String(form.get("category") ?? "");
+  const stageTitles = form.getAll("stageTitle");
+  const stageDescriptions = form.getAll("stageDescription");
+  const stageFiles = form.getAll("stageImage");
+  const stageCount = stageTitles.length;
+  if (!title || title.length > 160 || !description || description.length > 2000 || !categories.has(category) || stageCount < 1 || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount) {
+    return NextResponse.json({ error: "أكمل بيانات المشروع واختر نوعه وأضف من مرحلة إلى 12 مرحلة." }, { status: 400 });
   }
-  const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
-  const extension = extensions[image.type];
-  if (!extension || image.size === 0 || image.size > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: "اختر صورة JPG أو PNG أو WEBP أو AVIF بحجم لا يتجاوز 5 ميجابايت." }, { status: 400 });
+  const stageText = stageTitles.map((value, index) => ({ title: String(value).trim(), description: String(stageDescriptions[index]).trim() }));
+  if (stageText.some((stage) => !stage.title || stage.title.length > 160 || !stage.description || stage.description.length > 2000)) {
+    return NextResponse.json({ error: "أدخل عنوانًا ووصفًا صالحين لكل مرحلة." }, { status: 400 });
   }
-  const bytes = new Uint8Array(await image.arrayBuffer());
-  const startsWith = (...signature: number[]) => signature.every((byte, index) => bytes[index] === byte);
-  const ascii = (start: number, end: number) => String.fromCharCode(...bytes.slice(start, end));
-  const signaturesMatch = image.type === "image/jpeg" ? startsWith(0xff, 0xd8, 0xff)
-    : image.type === "image/png" ? startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)
-    : image.type === "image/webp" ? ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP"
-    : ascii(4, 12) === "ftypavif" || ascii(4, 12) === "ftypavis";
-  if (!signaturesMatch) return NextResponse.json({ error: "محتوى الملف لا يطابق نوع الصورة." }, { status: 400 });
 
-  const id = crypto.randomUUID();
-  const key = `${crypto.randomUUID()}.${extension}`;
   let bucket: ReturnType<typeof getImagesBucket> | undefined;
-  let stage = "إعداد مخزن الصور";
+  const keys: string[] = [];
+  let stage = "التحقق من الصور";
   try {
+    const cover = await validateImage(form.get("image"));
+    const phaseImages = await Promise.all(stageFiles.map(validateImage));
     bucket = getImagesBucket();
-    stage = "رفع الصورة";
-    await bucket.put(key, bytes, { httpMetadata: { contentType: image.type, cacheControl: "public, max-age=31536000, immutable" } });
+    const upload = async (image: Awaited<ReturnType<typeof validateImage>>) => {
+      const key = `${crypto.randomUUID()}.${image.extension}`;
+      keys.push(key);
+      await bucket!.put(key, image.bytes, { httpMetadata: { contentType: image.contentType, cacheControl: "public, max-age=31536000, immutable" } });
+      return `/api/uploads/${key}`;
+    };
+    stage = "رفع صور المشروع ومراحله";
+    const [coverImage, ...phaseUrls] = await Promise.all([upload(cover), ...phaseImages.map(upload)]);
+    const projectId = crypto.randomUUID();
+    const stages = stageText.map((text, index) => ({ stageNumber: index + 1, titleAr: text.title, titleEn: text.title, descriptionAr: text.description, descriptionEn: text.description, image: phaseUrls[index] }));
     stage = "حفظ بيانات المشروع في D1";
-    await getDatabase().prepare("INSERT INTO projects (id, title, description, image) VALUES (?, ?, ?, ?)")
-      .bind(id, title, description, `/api/uploads/${key}`).run();
-    return NextResponse.json({ ok: true, id }, { status: 201 });
+    await getDatabase().prepare("INSERT INTO projects (id, title, description, image, category, stages) VALUES (?, ?, ?, ?, ?, ?)")
+      .bind(projectId, title, description, coverImage, category, JSON.stringify(stages)).run();
+    return NextResponse.json({ ok: true, id: projectId }, { status: 201 });
   } catch (error) {
     console.error(`Project creation failed during ${stage}.`, error);
-    await bucket?.delete(key).catch(() => undefined);
-    return NextResponse.json({ error: `تعذر إكمال ${stage}. راجع إعدادات Cloudflare المحلية.` }, { status: 503 });
+    await Promise.allSettled(keys.map((key) => bucket?.delete(key)));
+    const message = error instanceof Error && stage === "التحقق من الصور" ? error.message : `تعذر إكمال ${stage}. راجع إعدادات Cloudflare المحلية.`;
+    return NextResponse.json({ error: message }, { status: stage === "التحقق من الصور" ? 400 : 503 });
   }
 }

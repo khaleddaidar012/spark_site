@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
-import { BarChart3, CalendarDays, LogOut, Moon, RefreshCw, Sun, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { BarChart3, CalendarDays, LogOut, Moon, Plus, RefreshCw, Sun, Trash2, TrendingDown, TrendingUp, Users } from "lucide-react";
+
+type StageDraft = { id: string };
 
 type Counts = {
   daily: number;
@@ -45,6 +47,7 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [stages, setStages] = useState<StageDraft[]>([{ id: "stage-1" }]);
 
   function toggleTheme() {
     setTheme((current) => current === "light" ? "dark" : "light");
@@ -161,6 +164,7 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
     setBusy(false);
     if (!response.ok) { setMessage(result.error ?? "تعذر إضافة المشروع"); return; }
     formElement.reset();
+    setStages([{ id: crypto.randomUUID() }]);
     setMessage("تم حفظ المشروع وسيظهر في المعرض.");
   }
 
@@ -247,8 +251,13 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
             <form onSubmit={addProject} className="console-project-form space-y-4 rounded-2xl border border-white/10 bg-white/5 p-6">
               <h2 className="text-xl font-bold">إضافة مشروع</h2>
               <label className="block space-y-2"><span>عنوان المشروع</span><input name="title" required maxLength={160} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label>
+              <label className="block space-y-2"><span>نوع المشروع</span><select name="category" required defaultValue="residential" className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200"><option value="structural">الأساسات والتأسيس</option><option value="finishing">التشطيبات</option><option value="residential">الإنشاءات السكنية</option><option value="renders">التصاميم المعمارية 3D</option></select></label>
               <label className="block space-y-2"><span>الوصف</span><textarea name="description" required maxLength={2000} rows={4} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label>
               <label className="block space-y-2"><span>صورة المشروع</span><input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200 file:me-3 file:rounded-md file:border-0 file:bg-[#C59341] file:px-3 file:py-2 file:font-bold file:text-[#0B111E]" /><span className="block text-xs text-slate-400">JPG أو PNG أو WEBP أو AVIF، بحد أقصى 5 ميجابايت.</span></label>
+              <section className="space-y-4 border-t border-slate-200 pt-5" aria-label="مراحل المشروع">
+                <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-bold">مراحل تنفيذ المشروع</h3><p className="mt-1 text-xs text-slate-400">أضف صورة وعنوانًا ووصفًا لكل مرحلة.</p></div><button type="button" onClick={() => setStages((items) => [...items, { id: crypto.randomUUID() }])} disabled={stages.length >= 12} className="inline-flex items-center gap-2 rounded-lg border border-[#C59341]/40 px-3 py-2 text-sm font-bold text-[#946200] transition hover:bg-[#C59341]/10 disabled:opacity-50"><Plus className="h-4 w-4" />إضافة مرحلة</button></div>
+                {stages.map((stage, index) => <fieldset key={stage.id} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4"><legend className="sr-only">المرحلة {index + 1}</legend><div className="flex items-center justify-between"><span className="text-sm font-bold">المرحلة {index + 1}</span>{stages.length > 1 && <button type="button" onClick={() => setStages((items) => items.filter((item) => item.id !== stage.id))} aria-label={`حذف المرحلة ${index + 1}`} className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>}</div><label className="block space-y-2"><span>عنوان المرحلة</span><input name="stageTitle" required maxLength={160} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label><label className="block space-y-2"><span>وصف المرحلة</span><textarea name="stageDescription" required maxLength={2000} rows={3} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label><label className="block space-y-2"><span>صورة المرحلة</span><input name="stageImage" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200 file:me-3 file:rounded-md file:border-0 file:bg-[#C59341] file:px-3 file:py-2 file:font-bold file:text-[#0B111E]" /></label></fieldset>)}
+              </section>
               <button disabled={busy} className="rounded-lg bg-[#C59341] px-6 py-3 font-bold text-[#0B111E]">{busy ? "جارٍ رفع الصورة وحفظ المشروع…" : "رفع وحفظ المشروع"}</button>
               {message && <p role="status" className={`text-sm ${theme === "light" ? "text-[#946200]" : "text-[#DEB86A]"}`}>{message}</p>}
             </form>
