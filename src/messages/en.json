@@ -1,0 +1,298 @@
+{
+  "nav": {
+    "home": "Home",
+    "about": "About Us",
+    "services": "Services",
+    "work": "Our Work",
+    "contact": "Contact Us",
+    "requestConsultation": "Request Consultation",
+    "langSwitch": "العربية",
+    "openMenu": "Open Menu",
+    "closeMenu": "Close Menu"
+  },
+  "hero": {
+    "badge": "17+ Years of Engineering Track Record",
+    "title": "From Vision to Reality",
+    "titleAccent": "with Engineering Precision",
+    "subtitle": "Spark Engineering & Contracting — Rigorous consultant supervision from foundations and waterproofing to luxury finishing.",
+    "ctaExplore": "Explore Our Services",
+    "ctaConsult": "Request a Consultation",
+    "scrollDown": "Scroll Down"
+  },
+  "intro": {
+    "overline": "Who We Are",
+    "heading": "Engineering Excellence &",
+    "headingAccent": "Structural Safety",
+    "body": "Spark Engineering & Contracting was established with a clear vision led by Consultant Engineer Mohamed Sharara, delivering a unique model in the contracting sector that combines high-level consulting precision with on-site mastery. We specialize in private and governmental projects with rigorous engineering standards starting from soil testing and foundations to luxury finishing.",
+    "learnMore": "Learn More About Us",
+    "consultant": "Consultant Eng. Mohamed Sharara",
+    "consultantTitle": "Founder & Supervising Consultant",
+    "experience": "17+ Years Experience",
+    "experienceDesc": "In Private & Governmental Projects"
+  },
+  "process": {
+    "overline": "Our Methodology",
+    "heading": "Our Engineering Process",
+    "headingAccent": "From Concept to Key",
+    "steps": [
+      {
+        "num": "01",
+        "title": "Understand Requirements",
+        "desc": "Analyzing client architectural needs, budgetary targets, and site parameters precisely."
+      },
+      {
+        "num": "02",
+        "title": "Study & Design",
+        "desc": "Geotechnical testing, structural calculations, and preparation of approved executive blueprints."
+      },
+      {
+        "num": "03",
+        "title": "Execution & Supervision",
+        "desc": "Excavation, foundation casting, and waterproofing under continuous consultant oversight."
+      },
+      {
+        "num": "04",
+        "title": "Finishing & Handover",
+        "desc": "Executing luxury finishing and turnkey project delivery according to the client's vision."
+      }
+    ]
+  },
+  "whyUs": {
+    "overline": "Why Spark",
+    "heading": "What Makes Us",
+    "headingAccent": "The Best Choice",
+    "items": [
+      {
+        "title": "Direct Consultant Supervision",
+        "desc": "Personal supervision by Consultant Eng. Mohamed Sharara at every construction phase without exception."
+      },
+      {
+        "title": "Specialized Foundation Waterproofing",
+        "desc": "Advanced insulation systems protecting concrete structures from moisture and salts in Delta and coastal soils."
+      },
+      {
+        "title": "17+ Years Field Experience",
+        "desc": "A proven track record in private and governmental projects from foundations to full handover."
+      },
+      {
+        "title": "Turnkey Delivery",
+        "desc": "A single engineering contractor handling everything from raw land to a ready-to-move-in building."
+      }
+    ]
+  },
+  "services": {
+    "overline": "Our Services",
+    "heading": "Comprehensive",
+    "headingAccent": "Engineering Solutions",
+    "viewAll": "View All Services",
+    "enquire": "Enquire About This Service",
+    "flaggedNotice": "This service is pending full scope review. Contact us for inquiries.",
+    "items": [
+      {
+        "id": "design",
+        "title": "Engineering & Architectural Design",
+        "shortDesc": "Precise architectural and structural blueprints meeting aesthetics and structural safety requirements.",
+        "scope": "3D architectural design, structural calculations, MEP layouts, and securing engineering permits."
+      },
+      {
+        "id": "construction",
+        "title": "Construction & Contracting",
+        "shortDesc": "Execution of reinforced concrete structures and integrated construction to the highest quality standards.",
+        "scope": "Building concrete skeletons, multi-story buildings, engineering coordination, and civil works supervision."
+      },
+      {
+        "id": "supervision",
+        "title": "Engineering Supervision & Monitoring",
+        "shortDesc": "Rigorous on-site consultant supervision ensuring execution integrity at every stage.",
+        "scope": "Inspecting rebar before every pour, slump tests, specification compliance review, and phase reports."
+      },
+      {
+        "id": "foundations",
+        "title": "Excavation, Foundations & Concrete Works",
+        "shortDesc": "Site preparation and foundation execution adhering to the highest structural safety standards.",
+        "scope": "Excavation and leveling, plain concrete, reinforced footings, insulation, and soil replacement based on soil studies."
+      },
+      {
+        "id": "waterproofing",
+        "title": "Foundation Waterproofing & Protection",
+        "shortDesc": "Advanced insulation systems protecting structures from moisture and groundwater.",
+        "scope": "Bituminous primer coating, modified SBS membrane, protection layers, tank and bathroom insulation."
+      },
+      {
+        "id": "finishing",
+        "title": "Interior & Exterior Finishing",
+        "shortDesc": "Luxury interior and exterior finishing combining beauty and durability.",
+        "scope": "Marble and porcelain floors, architectural gypsum and ceilings, luxury paints, facades, and cladding."
+      },
+      {
+        "id": "turnkey",
+        "title": "Project Delivery: Concept to Turnkey",
+        "shortDesc": "Integrated management from raw land to a ready-to-move-in building.",
+        "scope": "Complete project management: Design + Execution + Supervision + Finishing + Turnkey Handover."
+      },
+      {
+        "id": "realestate",
+        "title": "Real Estate Investment & Development",
+        "shortDesc": "Engineering and real estate consulting to maximize project and land value.",
+        "scope": "Engineering and real estate feasibility studies, land valuation, and development potential.",
+        "flagged": true
+      }
+    ]
+  },
+  "gallery": {
+    "overline": "Our Work",
+    "heading": "Completed Projects",
+    "headingAccent": "Gallery",
+    "subtitle": "Real examples of field work with clear distinction between completed projects and architectural designs.",
+    "filters": {
+      "all": "All",
+      "structural": "Foundations & Structural",
+      "residential": "Residential Construction",
+      "finishing": "Finishing",
+      "renders": "3D Architectural Concepts"
+    },
+    "badges": {
+      "completed": "Completed On-Site Project",
+      "render": "3D Architectural Render"
+    },
+    "noPhotos": "Photos pending documentation",
+    "viewProject": "View Project",
+    "viewAll": "View All Work",
+    "lightbox": {
+      "close": "Close",
+      "prev": "Previous",
+      "next": "Next"
+    }
+  },
+  "contact": {
+    "overline": "Contact Us",
+    "heading": "We Are Here",
+    "headingAccent": "To Serve You",
+    "subtitle": "Contact Consultant Eng. Mohamed Sharara to discuss your project and get specialized engineering consultation.",
+    "channels": {
+      "phone": {
+        "label": "Phone / WhatsApp",
+        "action": "Call Now"
+      },
+      "whatsapp": {
+        "label": "WhatsApp",
+        "action": "Start Chat",
+        "prefill": "Hello Spark Engineering, I would like to schedule an engineering consultation with Consultant Eng. Mohamed Sharara regarding a new project."
+      },
+      "email": {
+        "label": "Email",
+        "action": "Send Message"
+      },
+      "address": {
+        "label": "Office Location",
+        "action": "Open in Google Maps"
+      }
+    },
+    "form": {
+      "heading": "Request Engineering Consultation",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Doe",
+      "fullNameError": "Please enter your full name (at least 3 characters)",
+      "phone": "Phone / WhatsApp Number",
+      "phonePlaceholder": "01006299339",
+      "phoneError": "Please enter a valid Egyptian phone number (e.g., 01006299339)",
+      "email": "Email Address (Optional)",
+      "emailPlaceholder": "name@example.com",
+      "emailError": "Please enter a valid email address",
+      "service": "Desired Service",
+      "servicePlaceholder": "Select a service...",
+      "serviceError": "Please select a service",
+      "notes": "Project Details & Location",
+      "notesPlaceholder": "Briefly describe your project — building type, approximate location, and any important details.",
+      "notesError": "Please describe your project (at least 10 characters)",
+      "submit": "Send Consultation Request",
+      "submitting": "Submitting...",
+      "successTitle": "Your request has been received successfully!",
+      "successBody": "Eng. Mohamed Sharara's team will contact you as soon as possible.",
+      "errorTitle": "Unable to send request",
+      "errorBody": "The system could not send your request via email at this time. You can send it directly via WhatsApp:",
+      "whatsappFallback": "Send via WhatsApp Now",
+      "newRequest": "Send a new request"
+    }
+  },
+  "about": {
+    "overline": "About Us",
+    "heading": "Spark Engineering & Contracting",
+    "headingAccent": "The Core of Engineering Excellence",
+    "subtitle": "A company specializing in engineering design, general contracting, and consultant supervision under the leadership of Consultant Eng. Mohamed Sharara.",
+    "leadership": {
+      "overline": "Our Engineering Leadership",
+      "heading": "Consultant Eng.",
+      "name": "Mohamed Sharara",
+      "title": "Founder & Principal Supervising Consultant",
+      "bio": "Consultant Eng. Mohamed Sharara takes full engineering leadership of all Spark projects, from study and design to final handover. His engineering record includes over 17 years of field experience in private and governmental sector projects.",
+      "expertise": [
+        "Structural & Architectural Design",
+        "Foundation & Concrete Works",
+        "Moisture Insulation & Protection Systems",
+        "Consultant Engineering Supervision",
+        "Turnkey Project Delivery"
+      ]
+    },
+    "philosophy": {
+      "overline": "Our Engineering Philosophy",
+      "heading": "Quality Begins",
+      "headingAccent": "Underground",
+      "body": "In Damietta and other Delta governorates, the soil is characterized by its alluvial nature, high groundwater levels, and coastal salinity. These factors make foundation works and waterproofing a pillar that accepts no compromise. Spark adopts the highest specifications for moisture insulation and concrete protection from sulfate salts, because a truly luxurious building is one protected from its roots."
+    },
+    "values": {
+      "overline": "Our Engineering Values",
+      "heading": "Principles We",
+      "headingAccent": "Never Compromise",
+      "items": [
+        {
+          "title": "Absolute Integrity",
+          "desc": "Accurate Bills of Quantities (BOQ), documented material sourcing, and execution strictly adhering to approved blueprints."
+        },
+        {
+          "title": "Continuous Supervision",
+          "desc": "Site visits are not just a formality — we inspect the reinforcement steel before every concrete pour."
+        },
+        {
+          "title": "Structural Quality",
+          "desc": "Enduring architectural beauty built on solid structural foundations calculated with mathematical precision."
+        },
+        {
+          "title": "Client Vision",
+          "desc": "We turn homeowners' dreams into tangible reality without compromising the structural safety margin."
+        }
+      ]
+    }
+  },
+  "footer": {
+    "tagline": "Engineering precision, structural durability, and consultant supervision from foundation to turnkey.",
+    "leadership": "Under the supervision of: Consultant Eng. Mohamed Sharara",
+    "quickLinks": "Quick Links",
+    "servicesLinks": "Our Services",
+    "contactInfo": "Contact Us",
+    "rights": "All rights reserved © Spark Engineering & Contracting",
+    "whatsappFloat": "Chat on WhatsApp"
+  },
+  "meta": {
+    "home": {
+      "title": "Spark Engineering & Contracting — Consultant Supervision from Foundation to Turnkey",
+      "description": "Spark Engineering & Contracting, led by Consultant Eng. Mohamed Sharara. 17+ years of expertise in foundation works, structural concrete, and turnkey delivery in Damietta."
+    },
+    "about": {
+      "title": "About Us — Engineering Leadership & 17+ Years Expertise | Spark",
+      "description": "Learn about Spark Engineering & Consultant Eng. Mohamed Sharara. Over 17 years executing private and governmental projects with rigorous standards."
+    },
+    "services": {
+      "title": "Engineering Services — Foundations, Waterproofing & Turnkey | Spark",
+      "description": "Explore Spark's services: architectural design, engineering supervision, foundation waterproofing, luxury finishing, and turnkey construction."
+    },
+    "work": {
+      "title": "Our Projects & Construction Portfolio | Spark Engineering",
+      "description": "Explore completed projects and architectural concepts by Spark in Damietta. Transparent documentation from structural skeletons to finished facades."
+    },
+    "contact": {
+      "title": "Contact Us — Request Engineering Consultation | Spark Damietta",
+      "description": "Contact Consultant Eng. Mohamed Sharara. Phone & WhatsApp: +201006299339. Office: Sorour Square, Damietta, Egypt."
+    }
+  }
+}

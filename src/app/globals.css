@@ -1,0 +1,318 @@
+@import "tailwindcss";
+
+/* ============================================================
+   SPARK ENGINEERING & CONTRACTING — GLOBAL DESIGN SYSTEM
+   سبارك للهندسة والمقاولات — نظام التصميم الشامل
+   ============================================================ */
+
+@theme {
+  /* ── Gold Palette (Extracted from logo.jpg) ── */
+  --color-gold-50:  #FBF7EE;
+  --color-gold-100: #F5EACF;
+  --color-gold-300: #DEB86A;
+  --color-gold-500: #C59341;
+  --color-gold-600: #AA7B2F;
+  --color-gold-700: #8C611E;
+
+  /* ── Navy / Slate Palette (Extracted from logo.jpg bg) ── */
+  --color-navy-950: #0B111E;
+  --color-navy-900: #0F172A;
+  --color-navy-800: #1E293B;
+  --color-navy-700: #334155;
+  --color-navy-600: #475569;
+
+  /* ── Surface ── */
+  --color-surface-bg:   #F8FAFC;
+  --color-surface-card: #FFFFFF;
+  --color-border:       #E2E8F0;
+
+  /* ── Text ── */
+  --color-text-main:  #0F172A;
+  --color-text-muted: #475569;
+
+  /* ── Status ── */
+  --color-success: #059669;
+  --color-error:   #DC2626;
+  --color-whatsapp: #25D366;
+
+  /* ── Fonts ── */
+  --font-cairo:  var(--font-cairo);
+  --font-outfit: var(--font-outfit);
+}
+
+:root {
+  /* ── Gradients ── */
+  --gradient-gold: linear-gradient(135deg, #DEB86A 0%, #C59341 50%, #93671F 100%);
+  --gradient-gold-hover: linear-gradient(135deg, #E5C47F 0%, #D4A14E 50%, #A37526 100%);
+  --gradient-navy-hero: linear-gradient(180deg, rgba(11,17,30,0.55) 0%, rgba(11,17,30,0.92) 100%);
+
+  /* ── Spacing tokens ── */
+  --space-section-y-mobile:  4rem;
+  --space-section-y-desktop: 6rem;
+
+  /* ── Border Radii ── */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+}
+
+/* ── Reset & Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--color-surface-bg);
+  color: var(--color-text-main);
+  line-height: 1.6;
+  overflow-x: clip;
+}
+
+/* Arabic (RTL) body — Cairo font */
+[lang="ar"] body,
+[lang="ar"] { font-family: var(--font-cairo), system-ui, sans-serif; }
+
+/* English (LTR) body — Outfit font */
+[lang="en"] body,
+[lang="en"] { font-family: var(--font-outfit), system-ui, sans-serif; }
+
+/* ── Phone / email always LTR ── */
+.bidi-isolate {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* ── Gold Gradient Text ── */
+.text-gradient-gold {
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Gold accent underline for section headings ── */
+.section-accent::after {
+  content: '';
+  display: block;
+  width: 3.5rem;
+  height: 3px;
+  background: var(--gradient-gold);
+  border-radius: 2px;
+  margin-top: 0.75rem;
+}
+[dir="rtl"] .section-accent::after { margin-inline-start: 0; }
+[dir="ltr"] .section-accent::after { margin-inline-start: 0; }
+
+/* ── Smooth reduced-motion override ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Focus ring ── */
+:focus-visible {
+  outline: 2px solid var(--color-gold-500);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--color-navy-900); }
+::-webkit-scrollbar-thumb { background: var(--color-gold-700); border-radius: 3px; }
+
+/* ── Utility: section padding ── */
+.section-py {
+  padding-block: var(--space-section-y-mobile);
+}
+@media (min-width: 1024px) {
+  .section-py { padding-block: var(--space-section-y-desktop); }
+}
+
+/* ── Border Beam & Carousel Animation System ── */
+@keyframes spin-beam {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes slider-progress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+@keyframes slide-in-rtl-next {
+  0% {
+    opacity: 0;
+    transform: translateX(36px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes slide-in-rtl-prev {
+  0% {
+    opacity: 0;
+    transform: translateX(-36px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes slide-in-ltr-next {
+  0% {
+    opacity: 0;
+    transform: translateX(-36px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes slide-in-ltr-prev {
+  0% {
+    opacity: 0;
+    transform: translateX(36px);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes image-reveal {
+  0% {
+    opacity: 0.2;
+    transform: scale(1.08);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes badge-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulse-gold-subtle {
+  0%, 100% {
+    box-shadow: 0 0 15px -3px rgba(222, 184, 106, 0.15), 0 0 6px -2px rgba(197, 147, 65, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px 2px rgba(222, 184, 106, 0.35), 0 0 12px 0px rgba(197, 147, 65, 0.4);
+  }
+}
+
+@keyframes luxury-image-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes luxury-text-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0px);
+  }
+}
+
+@keyframes luxury-scope-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-luxury-image {
+  animation: luxury-image-reveal 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-luxury-text {
+  animation: luxury-text-reveal 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-luxury-scope {
+  animation: luxury-scope-reveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+.animate-spin-beam {
+  animation: spin-beam 9s linear infinite;
+}
+
+.animate-image-reveal {
+  animation: image-reveal 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-badge-pop {
+  animation: badge-pop 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-pulse-gold {
+  animation: pulse-gold-subtle 4s ease-in-out infinite;
+}
+
+.animate-slide-rtl-next {
+  animation: slide-in-rtl-next 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-rtl-prev {
+  animation: slide-in-rtl-prev 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-ltr-next {
+  animation: slide-in-ltr-next 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-ltr-prev {
+  animation: slide-in-ltr-prev 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
