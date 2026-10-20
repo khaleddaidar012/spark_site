@@ -1,0 +1,1 @@
+ALTER TABLE projects ADD COLUMN stages_configured INTEGER NOT NULL DEFAULT 0;

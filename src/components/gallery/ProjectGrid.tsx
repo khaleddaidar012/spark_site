@@ -34,7 +34,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
     let active = true;
     fetch("/api/projects", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((rows: { id: string; title: string; description: string; image: string; category?: ProjectCategory; stages?: ProjectStage[] }[] | null) => {
+      .then((rows: { id: string; title: string; description: string; image: string; category?: ProjectCategory; stages?: ProjectStage[]; stagesConfigured?: boolean }[] | null) => {
         if (!active || !rows) return;
         const localById = new Map(projectsData.map((project) => [project.id, project]));
         const databaseProjects = rows.map((row): ProjectItem => {
@@ -51,8 +51,8 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
             descriptionAr: row.description,
             descriptionEn: local?.descriptionEn ?? row.description,
             image: row.image,
-            gallery: row.stages?.length ? row.stages.map((stage) => stage.image) : local?.gallery ?? [row.image],
-            stages: row.stages?.length ? row.stages : local?.stages,
+            gallery: row.stagesConfigured ? (row.stages?.length ? row.stages.map((stage) => stage.image) : [row.image]) : local?.gallery ?? [row.image],
+            stages: row.stagesConfigured ? row.stages ?? [] : local?.stages,
           };
         });
         setProjects(databaseProjects);

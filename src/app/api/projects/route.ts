@@ -6,12 +6,12 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const { results } = await getDatabase().prepare(
-      "SELECT id, title, description, image, category, stages FROM projects ORDER BY created_at DESC LIMIT 100"
-    ).all<{ id: string; title: string; description: string; image: string; category: string; stages: string }>();
+      "SELECT id, title, description, image, category, stages, stages_configured FROM projects ORDER BY created_at DESC LIMIT 100"
+    ).all<{ id: string; title: string; description: string; image: string; category: string; stages: string; stages_configured: number }>();
     const projects = results.map((project) => {
       let stages: unknown[] = [];
       try { stages = JSON.parse(project.stages) as unknown[]; } catch { /* Keep legacy projects readable. */ }
-      return { ...project, stages };
+      return { ...project, stages, stagesConfigured: project.stages_configured === 1 };
     });
     return NextResponse.json(projects, { headers: { "Cache-Control": "no-store" } });
   } catch {

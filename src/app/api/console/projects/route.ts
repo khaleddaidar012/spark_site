@@ -35,8 +35,8 @@ export async function POST(request: Request) {
   const stageDescriptions = form.getAll("stageDescription");
   const stageFiles = form.getAll("stageImage");
   const stageCount = stageTitles.length;
-  if (!title || title.length > 160 || !description || description.length > 2000 || !categories.has(category) || stageCount < 1 || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount) {
-    return NextResponse.json({ error: "أكمل بيانات المشروع واختر نوعه وأضف من مرحلة إلى 12 مرحلة." }, { status: 400 });
+  if (!title || title.length > 160 || !description || description.length > 2000 || !categories.has(category) || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount) {
+    return NextResponse.json({ error: "أكمل بيانات المشروع واختر نوعه. يمكنك إضافة حتى 12 مرحلة أو حفظ المشروع بلا مراحل." }, { status: 400 });
   }
   const stageText = stageTitles.map((value, index) => ({ title: String(value).trim(), description: String(stageDescriptions[index]).trim() }));
   if (stageText.some((stage) => !stage.title || stage.title.length > 160 || !stage.description || stage.description.length > 2000)) {
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     const projectId = crypto.randomUUID();
     const stages = stageText.map((text, index) => ({ stageNumber: index + 1, titleAr: text.title, titleEn: text.title, descriptionAr: text.description, descriptionEn: text.description, image: phaseUrls[index] }));
     stage = "حفظ بيانات المشروع في D1";
-    await getDatabase().prepare("INSERT INTO projects (id, title, description, image, category, stages) VALUES (?, ?, ?, ?, ?, ?)")
+    await getDatabase().prepare("INSERT INTO projects (id, title, description, image, category, stages, stages_configured) VALUES (?, ?, ?, ?, ?, ?, 1)")
       .bind(projectId, title, description, coverImage, category, JSON.stringify(stages)).run();
     return NextResponse.json({ ok: true, id: projectId }, { status: 201 });
   } catch (error) {
