@@ -34,14 +34,15 @@ export async function POST(request: Request) {
   const location = String(form.get("location") ?? "").trim();
   const year = String(form.get("year") ?? "").trim();
   const description = String(form.get("description") ?? "").trim();
-  const category = String(form.get("category") ?? "");
+  const category = String(form.get("category") ?? "").trim() || "residential";
+  const validYear = !year || (/^\d{4}$/.test(year) && Number(year) >= 1900 && Number(year) <= 2100);
   const stageTitles = form.getAll("stageTitle");
   const stageDescriptions = form.getAll("stageDescription");
   const stageFiles = stageTitles.map((_, index) => form.getAll(`stageImages-${index}`));
   const totalStageImages = stageFiles.reduce((total, files) => total + files.length, 0);
   const stageCount = stageTitles.length;
-  if (!title || title.length > 160 || !location || location.length > 120 || !/^\d{4}$/.test(year) || Number(year) < 1900 || Number(year) > 2100 || !description || description.length > 2000 || !categories.has(category) || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount || stageFiles.some((files) => files.length < 1 || files.length > maxImagesPerStage) || totalStageImages > maxStageImagesPerProject) {
-    return NextResponse.json({ error: "أكمل بيانات المشروع واختر صورة واحدة على الأقل لكل مرحلة. الحد الأقصى 8 صور للمرحلة و16 صورة للمشروع." }, { status: 400 });
+  if (!title || title.length > 160 || location.length > 120 || !validYear || !description || description.length > 2000 || !categories.has(category) || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount || stageFiles.some((files) => files.length < 1 || files.length > maxImagesPerStage) || totalStageImages > maxStageImagesPerProject) {
+    return NextResponse.json({ error: "أدخل اسم المشروع ووصفه واختر صورة غلاف صالحة. البيانات الأخرى اختيارية." }, { status: 400 });
   }
   const stageText = stageTitles.map((value, index) => ({ title: String(value).trim(), description: String(stageDescriptions[index]).trim() }));
   if (stageText.some((stage) => !stage.title || stage.title.length > 160 || !stage.description || stage.description.length > 2000)) {
