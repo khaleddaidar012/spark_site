@@ -1,16 +1,7 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import { ArrowDown, ArrowUp, BarChart3, CalendarDays, GripVertical, ImagePlus, LogOut, Moon, Plus, RefreshCw, Sun, Trash2, TrendingDown, TrendingUp, Users, X } from "lucide-react";
-
-type StageDraft = { id: string; files?: File[]; previews?: string[] };
-
-let stageIdSequence = 0;
-function createStageId() {
-  stageIdSequence += 1;
-  return `stage-${Date.now()}-${stageIdSequence}`;
-}
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { BarChart3, CalendarDays, LogOut, Moon, RefreshCw, Sun, TrendingDown, TrendingUp, Users } from "lucide-react";
 
 type Counts = {
   daily: number;
@@ -77,51 +68,11 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
   const [authenticated, setAuthenticated] = useState(initiallyAuthenticated);
   const [password, setPassword] = useState("");
   const [counts, setCounts] = useState<Counts>({ daily: 0, previousDaily: 0, weekly: 0, previousWeekly: 0, monthly: 0, previousMonthly: 0, trend: [] });
-  const [activeVisitors, setActiveVisitors] = useState<number | null>(null);
   const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [stages, setStages] = useState<StageDraft[]>([{ id: "stage-1" }]);
-  const [draggedStage, setDraggedStage] = useState<string | null>(null);
-  const previewUrls = useRef(new Map<string, string[]>());
-
-  useEffect(() => () => {
-    previewUrls.current.forEach((urls) => urls.forEach((url) => URL.revokeObjectURL(url)));
-    previewUrls.current.clear();
-  }, []);
-
-  function moveStage(fromId: string, toId: string) {
-    setStages((items) => {
-      const from = items.findIndex((item) => item.id === fromId);
-      const to = items.findIndex((item) => item.id === toId);
-      if (from < 0 || to < 0 || from === to) return items;
-      const reordered = [...items];
-      const [stage] = reordered.splice(from, 1);
-      reordered.splice(to, 0, stage);
-      return reordered;
-    });
-  }
-
-  function removeStage(id: string) {
-    const previews = previewUrls.current.get(id);
-    previews?.forEach((preview) => URL.revokeObjectURL(preview));
-    previewUrls.current.delete(id);
-    setStages((items) => items.filter((item) => item.id !== id));
-  }
-
-  function removeStageImage(id: string, imageIndex: number) {
-    const stage = stages.find((item) => item.id === id);
-    const preview = stage?.previews?.[imageIndex];
-    if (preview) URL.revokeObjectURL(preview);
-    const files = stage?.files?.filter((_, index) => index !== imageIndex) ?? [];
-    const previews = stage?.previews?.filter((_, index) => index !== imageIndex) ?? [];
-    if (previews.length) previewUrls.current.set(id, previews);
-    else previewUrls.current.delete(id);
-    setStages((items) => items.map((item) => item.id === id ? { ...item, files, previews: previews.length ? previews : undefined } : item));
-  }
-
   function toggleTheme() {
     setTheme((current) => current === "light" ? "dark" : "light");
   }
@@ -131,9 +82,8 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
     try {
       const response = await fetch("/api/analytics", { cache: "no-store", signal });
       if (response.ok) {
-        const result = await response.json() as Counts & { activeNow: number };
+        const result = await response.json() as Counts;
         if (signal?.aborted) return;
-        setActiveVisitors((current) => current === result.activeNow ? current : result.activeNow);
         const nextCounts: Counts = {
           daily: result.daily,
           previousDaily: result.previousDaily,
@@ -156,29 +106,8 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
   useEffect(() => {
     if (!authenticated) return;
     let stopped = false;
-    let activeTimer: number | undefined;
     let countsTimer: number | undefined;
-    let activeRequest: AbortController | undefined;
     let countsRequest: AbortController | undefined;
-
-    const scheduleActivePoll = async () => {
-      activeRequest?.abort();
-      activeRequest = new AbortController();
-      try {
-        const response = await fetch("/api/analytics?live=1", { cache: "no-store", signal: activeRequest.signal });
-        if (!response.ok) return;
-        const result = await response.json() as { activeNow: number };
-        if (!stopped && !activeRequest.signal.aborted) {
-          setActiveVisitors((current) => current === result.activeNow ? current : result.activeNow);
-        }
-      } catch {
-        // Keep the last successful live count while the dashboard is offline.
-      } finally {
-        if (!stopped && document.visibilityState === "visible") {
-          activeTimer = window.setTimeout(() => void scheduleActivePoll(), 15_000);
-        }
-      }
-    };
 
     const scheduleCountsPoll = async () => {
       countsRequest?.abort();
@@ -190,18 +119,14 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
     };
 
     const stopTimers = () => {
-      if (activeTimer !== undefined) window.clearTimeout(activeTimer);
       if (countsTimer !== undefined) window.clearTimeout(countsTimer);
-      activeTimer = undefined;
       countsTimer = undefined;
-      activeRequest?.abort();
       countsRequest?.abort();
     };
 
     const startPolling = () => {
       stopTimers();
       if (document.visibilityState !== "visible") return;
-      void scheduleActivePoll();
       void scheduleCountsPoll();
     };
 
@@ -232,19 +157,11 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
     event.preventDefault(); setBusy(true); setMessage("");
     const formElement = event.currentTarget;
     const form = new FormData(formElement);
-    stages.forEach((stage, index) => {
-      const fieldName = `stageImages-${index}`;
-      form.delete(fieldName);
-      stage.files?.forEach((file) => form.append(fieldName, file));
-    });
     const response = await fetch("/api/console/projects", { method: "POST", body: form });
     const result = await response.json();
     setBusy(false);
     if (!response.ok) { setMessage(result.error ?? "تعذر إضافة المشروع"); return; }
     formElement.reset();
-    previewUrls.current.forEach((urls) => urls.forEach((url) => URL.revokeObjectURL(url)));
-    previewUrls.current.clear();
-    setStages([{ id: createStageId() }]);
     setMessage("تم حفظ المشروع وسيظهر في المعرض.");
   }
 
@@ -273,23 +190,6 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
           </form>
         ) : (
           <>
-            <section aria-label="الزوار الموجودون الآن" className="console-live-card relative isolate flex flex-wrap items-center justify-between gap-5 overflow-hidden rounded-2xl border border-emerald-300/15 bg-gradient-to-l from-emerald-400/[0.10] via-white/[0.045] to-white/[0.025] px-5 py-5 shadow-[0_18px_55px_rgba(0,0,0,0.16)] backdrop-blur-xl sm:px-7">
-              <div className="pointer-events-none absolute -end-8 -top-14 -z-10 h-40 w-40 rounded-full bg-emerald-400/10 blur-3xl" />
-              <div className="flex items-center gap-4">
-                <span className="relative grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-emerald-300/20 bg-emerald-400/10 text-emerald-200">
-                  <Users className="h-5 w-5" />
-                  <span className="absolute -end-1 -top-1 flex h-3.5 w-3.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-400" /></span>
-                </span>
-                <div>
-                  <h2 className="font-bold text-white">الزوار على الموقع الآن</h2>
-                  <p className="mt-1 text-xs text-slate-400">جلسات الزوار النشطة خلال آخر 30 ثانية · يتحدث الرقم كل 15 ثانية</p>
-                </div>
-              </div>
-              <div className="flex items-baseline gap-2 ps-1">
-                <span key={activeVisitors ?? "loading"} className="animate-stat-pop text-4xl font-extrabold tracking-tight text-emerald-100 tabular-nums sm:text-5xl">{activeVisitors === null ? "…" : activeVisitors.toLocaleString("en-US")}</span>
-                <span className="text-xs text-slate-400">متصل الآن</span>
-              </div>
-            </section>
             <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="إحصائيات الزوار">
               {([
                 { key: "daily", label: "اليوم", subtitle: "مقارنة بالأمس", value: counts.daily, previous: counts.previousDaily, Icon: Users, sample: counts.trend.slice(-2) },
@@ -322,7 +222,7 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
               })}
             </section>
             <div className="console-meta flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400">
-              <p>يتحدث العداد الحي والإحصاءات كل 15 ثانية. تُحتسب كل زيارة لصفحة عامة، وتُستثنى لوحة الإدارة.</p>
+              <p>تُحدّث إحصائيات الزوار كل 15 ثانية، وتُستثنى زيارات لوحة الإدارة.</p>
               <div className="flex items-center gap-3">
                 <span className="inline-flex items-center gap-2"><span className="relative flex h-2 w-2"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" /></span>مباشر{updatedAt ? ` • ${new Date(updatedAt).toLocaleTimeString("ar-EG", { hour: "2-digit", minute: "2-digit" })}` : ""}</span>
                 <button type="button" onClick={() => void refreshCounts(true)} aria-label="تحديث الإحصائيات" className="console-outline-button rounded-lg border p-2 transition hover:border-[#DEB86A]/40 hover:text-[#DEB86A]"><RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /></button>
@@ -336,60 +236,6 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
               <label className="block space-y-2"><span>سنة التنفيذ</span><input name="year" type="number" required min={1900} max={2100} step={1} placeholder={String(new Date().getFullYear())} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label>
               <label className="block space-y-2"><span>الوصف</span><textarea name="description" required maxLength={2000} rows={4} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label>
               <label className="block space-y-2"><span>صورة غلاف المشروع</span><input name="image" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200 file:me-3 file:rounded-md file:border-0 file:bg-[#C59341] file:px-3 file:py-2 file:font-bold file:text-[#0B111E]" /><span className="block text-xs text-slate-400">JPG أو PNG أو WEBP أو AVIF، بحد أقصى 5 ميجابايت.</span></label>
-              <section className="space-y-4 border-t border-slate-200 pt-5" aria-label="مراحل المشروع">
-                <div className="flex flex-wrap items-center justify-between gap-3"><div><h3 className="font-bold">مراحل تنفيذ المشروع</h3><p className="mt-1 text-xs text-slate-400">اسحب المراحل لتغيير ترتيبها، أو استخدم الأسهم. يمكنك حذف مرحلة أو حفظ المشروع بلا مراحل.</p></div><button type="button" onClick={() => { const id = createStageId(); setStages((items) => [...items, { id }]); }} disabled={stages.length >= 12} className="inline-flex items-center gap-2 rounded-lg border border-[#C59341]/40 px-3 py-2 text-sm font-bold text-[#946200] transition hover:bg-[#C59341]/10 disabled:opacity-50"><Plus className="h-4 w-4" />إضافة مرحلة</button></div>
-                {stages.length === 0 && <p className="rounded-xl border border-dashed border-slate-300 px-4 py-6 text-center text-sm text-slate-500">لا توجد مراحل. سيظهر المشروع بصورة الغلاف فقط.</p>}
-                {stages.map((stage, index) => (
-                  <fieldset key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); if (draggedStage) moveStage(draggedStage, stage.id); setDraggedStage(null); }} className={`space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition ${draggedStage === stage.id ? "opacity-50" : ""}`}>
-                    <legend className="sr-only">المرحلة {index + 1}</legend>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <button type="button" draggable onDragStart={() => setDraggedStage(stage.id)} onDragEnd={() => setDraggedStage(null)} aria-label={`اسحب لإعادة ترتيب المرحلة ${index + 1}`} title="اسحب لإعادة الترتيب" className="cursor-grab touch-none rounded-lg p-2 text-slate-500 hover:bg-slate-200 active:cursor-grabbing"><GripVertical className="h-4 w-4" /></button>
-                        <span className="text-sm font-bold">المرحلة {index + 1}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {index > 0 && <button type="button" onClick={() => moveStage(stage.id, stages[index - 1].id)} aria-label={`نقل المرحلة ${index + 1} لأعلى`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-200"><ArrowUp className="h-4 w-4" /></button>}
-                        {index < stages.length - 1 && <button type="button" onClick={() => moveStage(stage.id, stages[index + 1].id)} aria-label={`نقل المرحلة ${index + 1} لأسفل`} className="rounded-lg p-2 text-slate-500 hover:bg-slate-200"><ArrowDown className="h-4 w-4" /></button>}
-                        <button type="button" onClick={() => removeStage(stage.id)} aria-label={`حذف المرحلة ${index + 1}`} className="rounded-lg p-2 text-rose-600 transition hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    </div>
-                    <label className="block space-y-2"><span>عنوان المرحلة</span><input name="stageTitle" required maxLength={160} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label>
-                    <label className="block space-y-2"><span>وصف المرحلة</span><textarea name="stageDescription" required maxLength={2000} rows={3} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label>
-                    <label className="block space-y-2">
-                      <span>صور المرحلة</span>
-                      <input name={`stageImages-${index}`} type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple onChange={(event) => {
-                        const selected = Array.from(event.currentTarget.files ?? []);
-                        event.currentTarget.value = "";
-                        if (!selected.length) return;
-                        const existingFiles = stage.files ?? [];
-                        const totalSelected = stages.reduce((total, item) => total + (item.files?.length ?? 0), 0);
-                        const allowedCount = Math.max(0, Math.min(8 - existingFiles.length, 16 - totalSelected));
-                        const accepted = selected.slice(0, allowedCount);
-                        if (accepted.length < selected.length) setMessage("الحد الأقصى 8 صور للمرحلة و16 صورة للمشروع.");
-                        else setMessage("");
-                        if (!accepted.length) return;
-                        const previews = [...(stage.previews ?? []), ...accepted.map((file) => URL.createObjectURL(file))];
-                        const files = [...existingFiles, ...accepted];
-                        previewUrls.current.set(stage.id, previews);
-                        setStages((items) => items.map((item) => item.id === stage.id ? { ...item, files, previews } : item));
-                      }} className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200 file:me-3 file:rounded-md file:border-0 file:bg-[#C59341] file:px-3 file:py-2 file:font-bold file:text-[#0B111E]" />
-                      <span className="block text-xs text-slate-400">اختيار الصور يعرض معاينة فقط. يمكنك إعادة فتح نافذة الاختيار لإضافة صور أخرى؛ أضف حتى 8 صور للمرحلة و16 صورة للمشروع، بحد أقصى 5 ميجابايت للصورة. لحفظها اضغط «رفع وحفظ المشروع» بعد إكمال البيانات.</span>
-                    </label>
-                    {stage.previews?.length ? (
-                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                        {stage.previews.map((preview, imageIndex) => (
-                          <div key={preview} className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white p-2">
-                            <Image src={preview} alt={`معاينة الصورة ${imageIndex + 1} للمرحلة ${index + 1}`} width={96} height={64} unoptimized className="h-16 w-24 rounded-md object-cover" />
-                            <span className="text-xs text-slate-500">صورة {imageIndex + 1}</span>
-                            <button type="button" onClick={() => removeStageImage(stage.id, imageIndex)} aria-label={`حذف الصورة ${imageIndex + 1} من المرحلة ${index + 1}`} className="ms-auto rounded-md p-1 text-rose-600 hover:bg-rose-50"><X className="h-4 w-4" /></button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className="flex items-center gap-2 text-xs text-slate-400"><ImagePlus className="h-4 w-4" />اختر صورة واحدة أو أكثر للمرحلة</span>
-                    )}
-                  </fieldset>
-                ))}              </section>
               <button disabled={busy} className="rounded-lg bg-[#C59341] px-6 py-3 font-bold text-[#0B111E]">{busy ? "جارٍ رفع الصورة وحفظ المشروع…" : "رفع وحفظ المشروع"}</button>
               {message && <p role="status" className={`text-sm ${theme === "light" ? "text-[#946200]" : "text-[#DEB86A]"}`}>{message}</p>}
             </form>
