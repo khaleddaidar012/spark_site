@@ -14,7 +14,7 @@ type Counts = {
   trend: { day: string; visitors: number }[];
 };
 
-function ProjectImagePreview({ file, onRemove }: { file: File; onRemove: () => void }) {
+function ProjectImagePreview({ file, onPreview, onRemove }: { file: File; onPreview: () => void; onRemove: () => void }) {
   const [previewUrl, setPreviewUrl] = useState("");
 
   useEffect(() => {
@@ -26,12 +26,48 @@ function ProjectImagePreview({ file, onRemove }: { file: File; onRemove: () => v
   return (
     <div className="relative overflow-hidden rounded-xl border border-white/15 bg-slate-950/70">
       <div className="relative aspect-square">
-        {previewUrl && <Image src={previewUrl} alt={file.name} fill unoptimized className="object-cover" sizes="120px" />}
+        <button type="button" onClick={onPreview} aria-label={`عرض الصورة ${file.name} بحجم كبير`} title="اضغط لعرض الصورة" className="absolute inset-0 z-[1] cursor-zoom-in focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#DEB86A]">
+          {previewUrl && <Image src={previewUrl} alt={file.name} fill unoptimized className="object-cover" sizes="120px" />}
+        </button>
         <button type="button" onClick={onRemove} aria-label={`حذف الصورة ${file.name}`} title="حذف الصورة" className="absolute end-1.5 top-1.5 z-10 grid h-8 w-8 place-items-center rounded-full border border-white/25 bg-black/75 text-white shadow transition hover:bg-red-700 focus-visible:outline-2 focus-visible:outline-[#DEB86A]">
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
       <p className="truncate px-2 py-1.5 text-[11px] text-slate-200" title={file.name}>{file.name}</p>
+    </div>
+  );
+}
+
+function ProjectImageLightbox({ file, onClose }: { file: File; onClose: () => void }) {
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [file]);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  return (
+    <div role="dialog" aria-modal="true" aria-label={`معاينة الصورة ${file.name}`} className="fixed inset-0 z-[100] grid place-items-center bg-black/90 p-4 backdrop-blur-sm" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-white/15 bg-[#0B111E] shadow-2xl">
+        <div className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-3 text-white">
+          <p className="truncate text-sm font-semibold" title={file.name}>{file.name}</p>
+          <button type="button" onClick={onClose} aria-label="إغلاق معاينة الصورة" title="إغلاق" className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-[#DEB86A]">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+        <div className="relative h-[min(78vh,800px)] w-full bg-black">
+          {previewUrl && <Image src={previewUrl} alt={file.name} fill unoptimized className="object-contain" sizes="95vw" />}
+        </div>
+      </div>
     </div>
   );
 }
@@ -96,6 +132,7 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [projectImages, setProjectImages] = useState<File[]>([]);
+  const [previewingImage, setPreviewingImage] = useState<File | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   function toggleTheme() {
     setTheme((current) => current === "light" ? "dark" : "light");
@@ -274,12 +311,13 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
               <label className="block space-y-2"><span>وصف المشروع (مطلوب)</span><textarea name="description" required maxLength={2000} rows={4} className="w-full rounded-lg bg-white px-3 py-3 text-slate-900" /></label>
               <div className="space-y-3">
                 <label className="block space-y-2"><span>صور المشروع (مطلوبة)</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif" multiple aria-required="true" onChange={(event) => { addProjectImages(event.currentTarget.files); event.currentTarget.value = ""; }} className="w-full rounded-lg border border-white/10 bg-white/[0.07] px-3 py-3 text-sm text-slate-200 file:me-3 file:rounded-md file:border-0 file:bg-[#C59341] file:px-3 file:py-2 file:font-bold file:text-[#0B111E]" /><span className="block text-xs text-slate-400">اختر حتى 16 صورة للمشروع. يمكنك الاختيار على دفعات، وحذف أي صورة قبل الرفع. JPG أو PNG أو WEBP أو AVIF، بحد أقصى 5 ميجابايت للصورة.</span></label>
-                {projectImages.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6" aria-live="polite">{projectImages.map((file, index) => <ProjectImagePreview key={`${file.name}-${file.size}-${file.lastModified}-${index}`} file={file} onRemove={() => setProjectImages((current) => current.filter((_, imageIndex) => imageIndex !== index))} />)}</div>}
+                {projectImages.length > 0 && <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6" aria-live="polite">{projectImages.map((file, index) => <ProjectImagePreview key={`${file.name}-${file.size}-${file.lastModified}-${index}`} file={file} onPreview={() => setPreviewingImage(file)} onRemove={() => setProjectImages((current) => current.filter((_, imageIndex) => imageIndex !== index))} />)}</div>}
                 <p className="text-xs text-slate-400">{projectImages.length} / 16 صورة مختارة</p>
               </div>
               <button disabled={busy} className="rounded-lg bg-[#C59341] px-6 py-3 font-bold text-[#0B111E]">{busy ? "جارٍ رفع الصورة وحفظ المشروع…" : "رفع وحفظ المشروع"}</button>
               {message && <p role="status" className={`text-sm ${theme === "light" ? "text-[#946200]" : "text-[#DEB86A]"}`}>{message}</p>}
             </form>
+            {previewingImage && <ProjectImageLightbox file={previewingImage} onClose={() => setPreviewingImage(null)} />}
           </>
         )}
       </div>
