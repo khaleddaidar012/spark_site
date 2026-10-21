@@ -19,7 +19,7 @@ The private console is at `/ar/spark-9f2a7c` (or `/en/spark-9f2a7c`) and require
 
 Project metadata is stored in D1, and uploaded image files are stored in the `spark-site-images` R2 bucket. The first migration seeds the three existing projects. From the console, upload a JPG, PNG, WEBP, or AVIF image (up to 5 MB) with each new project. The bucket stays private; the app serves stored images through `/api/uploads/...` and saves that path with the project metadata in D1. Wrangler uses a local R2 emulator during local development.
 
-The analytics tracker records each public page view (repeat visits count again) and refreshes an anonymous active-session heartbeat every 10 seconds while a public page is visible. Admin sessions and the console are excluded. The console polls both the lightweight active-session count and visit totals every 15 seconds while visible, without reloading the page. Static assets and API calls are not counted. The legacy migration preserves older unique-browser records as one visit per browser per day; exact repeat page views are recorded from the new tracker onward.
+The analytics tracker records public page views with a persistent anonymous browser ID and refreshes an active-session heartbeat every 10 seconds while a public page is visible. Console statistics count distinct browser IDs in each time period, so refreshing or opening another page does not count the same browser as a new visitor. Admin sessions and the console are excluded. The console polls active sessions and visitor totals every 15 seconds while visible. Static assets and API calls are not counted.
 
 ## Local development
 

@@ -46,15 +46,15 @@ export async function GET(request: Request) {
 
     const [result, trendResult, activeResult] = await Promise.all([
       db.prepare(
-      "SELECT COUNT(CASE WHEN visit_day = date('now') THEN 1 END) AS daily, " +
-      "COUNT(CASE WHEN visit_day = date('now', '-1 day') THEN 1 END) AS previousDaily, " +
-      "COUNT(CASE WHEN visit_day >= date('now', '-6 days') THEN 1 END) AS weekly, " +
-      "COUNT(CASE WHEN visit_day BETWEEN date('now', '-13 days') AND date('now', '-7 days') THEN 1 END) AS previousWeekly, " +
-      "COUNT(CASE WHEN visit_day >= date('now', '-29 days') THEN 1 END) AS monthly, " +
-      "COUNT(CASE WHEN visit_day BETWEEN date('now', '-59 days') AND date('now', '-30 days') THEN 1 END) AS previousMonthly " +
+      "SELECT COUNT(DISTINCT CASE WHEN visit_day = date('now') THEN visitor_id END) AS daily, " +
+      "COUNT(DISTINCT CASE WHEN visit_day = date('now', '-1 day') THEN visitor_id END) AS previousDaily, " +
+      "COUNT(DISTINCT CASE WHEN visit_day >= date('now', '-6 days') THEN visitor_id END) AS weekly, " +
+      "COUNT(DISTINCT CASE WHEN visit_day BETWEEN date('now', '-13 days') AND date('now', '-7 days') THEN visitor_id END) AS previousWeekly, " +
+      "COUNT(DISTINCT CASE WHEN visit_day >= date('now', '-29 days') THEN visitor_id END) AS monthly, " +
+      "COUNT(DISTINCT CASE WHEN visit_day BETWEEN date('now', '-59 days') AND date('now', '-30 days') THEN visitor_id END) AS previousMonthly " +
       "FROM page_visits WHERE visit_day >= date('now', '-59 days')"
       ).first<{ daily: number; previousDaily: number; weekly: number; previousWeekly: number; monthly: number; previousMonthly: number }>(),
-      db.prepare("SELECT visit_day, COUNT(*) AS visitors FROM page_visits WHERE visit_day >= date('now', '-29 days') GROUP BY visit_day ORDER BY visit_day")
+      db.prepare("SELECT visit_day, COUNT(DISTINCT visitor_id) AS visitors FROM page_visits WHERE visit_day >= date('now', '-29 days') GROUP BY visit_day ORDER BY visit_day")
         .all<{ visit_day: string; visitors: number }>(),
       db.prepare("SELECT COUNT(*) AS activeNow FROM active_visitors WHERE last_seen >= ?")
         .bind(activeSince).first<{ activeNow: number }>(),

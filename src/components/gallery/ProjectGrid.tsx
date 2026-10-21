@@ -34,7 +34,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
     let active = true;
     fetch("/api/projects", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((rows: { id: string; title: string; description: string; image: string; category?: ProjectCategory; stages?: ProjectStage[]; stagesConfigured?: boolean }[] | null) => {
+      .then((rows: { id: string; title: string; description: string; image: string; category?: ProjectCategory; stages?: ProjectStage[]; stagesConfigured?: boolean; location?: string; year?: string }[] | null) => {
         if (!active || !rows) return;
         const localById = new Map(projectsData.map((project) => [project.id, project]));
         const databaseProjects = rows.map((row): ProjectItem => {
@@ -46,12 +46,13 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
             status: local?.status ?? "completed",
             titleAr: row.title,
             titleEn: local?.titleEn ?? row.title,
-            locationAr: local?.locationAr ?? "مشروع سبارك",
-            locationEn: local?.locationEn ?? "Spark Project",
+            locationAr: row.location || local?.locationAr || "مشروع سبارك",
+            locationEn: row.location || local?.locationEn || "Spark Project",
             descriptionAr: row.description,
             descriptionEn: local?.descriptionEn ?? row.description,
             image: row.image,
-            gallery: row.stagesConfigured ? (row.stages?.length ? row.stages.map((stage) => stage.image) : [row.image]) : local?.gallery ?? [row.image],
+            year: row.year || local?.year,
+            gallery: row.stagesConfigured ? (row.stages?.length ? row.stages.flatMap((stage) => stage.images?.length ? stage.images : [stage.image]) : [row.image]) : local?.gallery ?? [row.image],
             stages: row.stagesConfigured ? row.stages ?? [] : local?.stages,
           };
         });
@@ -110,7 +111,11 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
       : [];
 
   const activeImage = currentGallery[activeImageIndex] || selectedProject?.image || "";
-  const currentStage = selectedProject?.stages?.[activeImageIndex];
+  const galleryStages = selectedProject?.stages?.flatMap((stage) => {
+    const images = stage.images?.length ? stage.images : [stage.image];
+    return images.map((image, imageIndex) => ({ stage, image, imageIndex, imageCount: images.length }));
+  }) ?? [];
+  const currentStage = galleryStages[activeImageIndex]?.stage;
 
   return (
     <div className="space-y-10">
@@ -187,7 +192,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
                     <div className="absolute top-3.5 end-3.5 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-md border border-[#DEB86A]/40 text-[#DEB86A] text-xs font-semibold flex items-center gap-1.5 shadow-md">
                       <Layers className="w-3.5 h-3.5" />
                       <span>
-                        {galleryCount} {isRtl ? "مراحل مصورة" : "Stages"}
+                        {galleryCount} {isRtl ? "صور" : "Photos"}
                       </span>
                     </div>
                   )}
@@ -329,7 +334,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
             {currentGallery.length > 1 && (
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-[#DEB86A] uppercase tracking-wider block">
-                  {isRtl ? "مراحل توثيق المشروع:" : "Project Documentation Stages:"}
+                  {isRtl ? "صور مراحل المشروع:" : "Project Stage Photos:"}
                 </span>
                 <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-thin">
                   {currentGallery.map((img, idx) => (
@@ -344,14 +349,20 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
                     >
                       <Image
                         src={img}
-                        alt={`Stage ${idx + 1}`}
+                        alt={galleryStages[idx]
+                          ? isRtl
+                            ? `المرحلة ${galleryStages[idx].stage.stageNumber}، الصورة ${galleryStages[idx].imageIndex + 1}`
+                            : `Stage ${galleryStages[idx].stage.stageNumber}, photo ${galleryStages[idx].imageIndex + 1}`
+                          : `Photo ${idx + 1}`}
                         fill
                         className="object-cover"
                         sizes="96px"
                         unoptimized
                       />
                       <span className="absolute bottom-0.5 end-0.5 px-1 py-0.2 rounded bg-black/80 text-[10px] text-white font-mono font-bold">
-                        {idx + 1}
+                        {galleryStages[idx]
+                          ? `${galleryStages[idx].stage.stageNumber}${galleryStages[idx].imageCount > 1 ? `.${galleryStages[idx].imageIndex + 1}` : ""}`
+                          : idx + 1}
                       </span>
                     </button>
                   ))}

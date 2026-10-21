@@ -12,6 +12,7 @@ export interface ProjectStage {
   titleAr: string;
   titleEn: string;
   image: string;
+  images?: string[];
   descriptionAr: string;
   descriptionEn: string;
 }
