@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/avif": "avif" };
 const categories = new Set(["structural", "finishing", "residential", "renders"]);
 const maxImageSize = 5 * 1024 * 1024;
+const maxProjectImages = 16;
 const maxImagesPerStage = 8;
 const maxStageImagesPerProject = 16;
 
@@ -36,13 +37,14 @@ export async function POST(request: Request) {
   const description = String(form.get("description") ?? "").trim();
   const category = String(form.get("category") ?? "").trim() || "residential";
   const validYear = !year || (/^\d{4}$/.test(year) && Number(year) >= 1900 && Number(year) <= 2100);
+  const projectImageFiles = form.getAll("images").filter((file): file is File => typeof file !== "string" && file.size > 0);
   const stageTitles = form.getAll("stageTitle");
   const stageDescriptions = form.getAll("stageDescription");
   const stageFiles = stageTitles.map((_, index) => form.getAll(`stageImages-${index}`));
   const totalStageImages = stageFiles.reduce((total, files) => total + files.length, 0);
   const stageCount = stageTitles.length;
-  if (!title || title.length > 160 || location.length > 120 || !validYear || !description || description.length > 2000 || !categories.has(category) || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount || stageFiles.some((files) => files.length < 1 || files.length > maxImagesPerStage) || totalStageImages > maxStageImagesPerProject) {
-    return NextResponse.json({ error: "أدخل اسم المشروع ووصفه واختر صورة غلاف صالحة. البيانات الأخرى اختيارية." }, { status: 400 });
+  if (!title || title.length > 160 || location.length > 120 || !validYear || !description || description.length > 2000 || !categories.has(category) || projectImageFiles.length < 1 || projectImageFiles.length > maxProjectImages || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount || stageFiles.some((files) => files.length < 1 || files.length > maxImagesPerStage) || totalStageImages > maxStageImagesPerProject) {
+    return NextResponse.json({ error: "أدخل اسم المشروع ووصفه واختر من صورة إلى 16 صورة صالحة للمشروع. البيانات الأخرى اختيارية." }, { status: 400 });
   }
   const stageText = stageTitles.map((value, index) => ({ title: String(value).trim(), description: String(stageDescriptions[index]).trim() }));
   if (stageText.some((stage) => !stage.title || stage.title.length > 160 || !stage.description || stage.description.length > 2000)) {
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
   const keys: string[] = [];
   let stage = "التحقق من الصور";
   try {
-    const cover = await validateImage(form.get("image"));
+    const projectImages = await Promise.all(projectImageFiles.map(validateImage));
     const phaseImages = await Promise.all(stageFiles.map((files) => Promise.all(files.map(validateImage))));
     bucket = getImagesBucket();
     const upload = async (image: Awaited<ReturnType<typeof validateImage>>) => {
@@ -63,7 +65,9 @@ export async function POST(request: Request) {
       return `/api/uploads/${key}`;
     };
     stage = "رفع صور المشروع ومراحله";
-    const [coverImage, ...flatPhaseUrls] = await Promise.all([upload(cover), ...phaseImages.flatMap((images) => images.map(upload))]);
+    const [coverImage, ...otherProjectAndPhaseUrls] = await Promise.all([...projectImages, ...phaseImages.flatMap((images) => images)].map(upload));
+    const projectImageUrls = [coverImage, ...otherProjectAndPhaseUrls.slice(0, projectImages.length - 1)];
+    const flatPhaseUrls = otherProjectAndPhaseUrls.slice(projectImages.length - 1);
     let nextPhaseUrl = 0;
     const projectId = crypto.randomUUID();
     const stages = stageText.map((text, index) => {
@@ -72,8 +76,8 @@ export async function POST(request: Request) {
       return { stageNumber: index + 1, titleAr: text.title, titleEn: text.title, descriptionAr: text.description, descriptionEn: text.description, image: images[0], images };
     });
     stage = "حفظ بيانات المشروع في D1";
-    await getDatabase().prepare("INSERT INTO projects (id, title, description, image, category, stages, stages_configured, location, year) VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)")
-      .bind(projectId, title, description, coverImage, category, JSON.stringify(stages), location, year).run();
+    await getDatabase().prepare("INSERT INTO projects (id, title, description, image, project_images, category, stages, stages_configured, location, year) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)")
+      .bind(projectId, title, description, coverImage, JSON.stringify(projectImageUrls), category, JSON.stringify(stages), location, year).run();
     return NextResponse.json({ ok: true, id: projectId }, { status: 201 });
   } catch (error) {
     console.error(`Project creation failed during ${stage}.`, error);

@@ -22,6 +22,63 @@ interface ProjectGridProps {
   limit?: number;
 }
 
+function ProjectCardSlider({ images, fallbackImage, title, imageCountLabel, prevLabel, nextLabel }: {
+  images?: string[];
+  fallbackImage: string;
+  title: string;
+  imageCountLabel: string;
+  prevLabel: string;
+  nextLabel: string;
+}) {
+  const slides = images?.length ? images : [fallbackImage];
+  const slidesKey = slides.join("\u0000");
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [slidesKey]);
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    const timer = window.setInterval(() => setActiveIndex((index) => (index + 1) % slides.length), 4500);
+    return () => window.clearInterval(timer);
+  }, [slides.length, slidesKey]);
+
+  const move = (event: React.MouseEvent<HTMLButtonElement>, offset: number) => {
+    event.stopPropagation();
+    setActiveIndex((index) => (index + offset + slides.length) % slides.length);
+  };
+
+  return (
+    <>
+      <Image
+        key={slidesKey}
+        src={slides[activeIndex % slides.length]}
+        alt={title}
+        fill
+        className="object-cover transition-transform duration-500 group-hover:scale-105"
+        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        unoptimized
+      />
+      {slides.length > 1 && (
+        <>
+          <div className="absolute bottom-3 end-3 z-10 rounded-md bg-black/70 px-2 py-1 text-[11px] font-semibold text-white" aria-live="polite">
+            {activeIndex + 1} / {slides.length} {imageCountLabel}
+          </div>
+          <div className="absolute inset-x-2 top-1/2 z-10 flex -translate-y-1/2 justify-between">
+            <button type="button" onClick={(event) => move(event, -1)} aria-label={prevLabel} className="grid h-9 w-9 place-items-center rounded-full border border-white/30 bg-black/60 text-white shadow-lg transition hover:bg-black/85 focus-visible:outline-2 focus-visible:outline-[#DEB86A]">
+              <ChevronLeft className="h-5 w-5 rtl:rotate-180" />
+            </button>
+            <button type="button" onClick={(event) => move(event, 1)} aria-label={nextLabel} className="grid h-9 w-9 place-items-center rounded-full border border-white/30 bg-black/60 text-white shadow-lg transition hover:bg-black/85 focus-visible:outline-2 focus-visible:outline-[#DEB86A]">
+              <ChevronRight className="h-5 w-5 rtl:rotate-180" />
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 export function ProjectGrid({ locale, limit }: ProjectGridProps) {
   const dict = getDict(locale);
   const isRtl = locale === "ar";
@@ -34,7 +91,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
     let active = true;
     fetch("/api/projects", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((rows: { id: string; title: string; description: string; image: string; category?: ProjectCategory; stages?: ProjectStage[]; stagesConfigured?: boolean; location?: string; year?: string }[] | null) => {
+      .then((rows: { id: string; title: string; description: string; image: string; images?: string[]; category?: ProjectCategory; stages?: ProjectStage[]; stagesConfigured?: boolean; location?: string; year?: string }[] | null) => {
         if (!active || !rows) return;
         const localById = new Map(projectsData.map((project) => [project.id, project]));
         const databaseProjects = rows.map((row): ProjectItem => {
@@ -50,9 +107,11 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
             locationEn: row.location || local?.locationEn || "Spark Project",
             descriptionAr: row.description,
             descriptionEn: local?.descriptionEn ?? row.description,
-            image: row.image,
+            image: row.images?.[0] ?? row.image,
             year: row.year || local?.year,
-            gallery: row.stagesConfigured ? (row.stages?.length ? row.stages.flatMap((stage) => stage.images?.length ? stage.images : [stage.image]) : [row.image]) : local?.gallery ?? [row.image],
+            gallery: row.images?.length
+              ? [...row.images, ...(row.stagesConfigured ? (row.stages ?? []).flatMap((stage) => stage.images?.length ? stage.images : [stage.image]) : [])].filter((image, index, images) => images.indexOf(image) === index)
+              : row.stagesConfigured ? (row.stages?.length ? row.stages.flatMap((stage) => stage.images?.length ? stage.images : [stage.image]) : [row.image]) : local?.gallery ?? [row.image],
             stages: row.stagesConfigured ? row.stages ?? [] : local?.stages,
           };
         });
@@ -156,14 +215,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
               >
                 {/* Image Preview Container */}
                 <div className="relative h-64 w-full overflow-hidden bg-slate-900">
-                  <Image
-                    src={project.image}
-                    alt={title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    unoptimized
-                  />
+                  <ProjectCardSlider images={project.gallery} fallbackImage={project.image} title={title} imageCountLabel={isRtl ? "صور" : "photos"} prevLabel={isRtl ? "الصورة السابقة" : "Previous image"} nextLabel={isRtl ? "الصورة التالية" : "Next image"} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
                   {/* Status Badge */}
