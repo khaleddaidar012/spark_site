@@ -108,6 +108,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
             descriptionAr: row.description,
             descriptionEn: local?.descriptionEn ?? row.description,
             image: row.images?.[0] ?? row.image,
+            cardImages: row.images?.length ? row.images : undefined,
             year: row.year || local?.year,
             gallery: row.images?.length
               ? [...row.images, ...(row.stagesConfigured ? (row.stages ?? []).flatMap((stage) => stage.images?.length ? stage.images : [stage.image]) : [])].filter((image, index, images) => images.indexOf(image) === index)
@@ -205,7 +206,8 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
             const location = isRtl ? project.locationAr : project.locationEn;
             const description = isRtl ? project.descriptionAr : project.descriptionEn;
             const isCompleted = project.status === "completed";
-            const galleryCount = project.gallery?.length || 1;
+            const cardImages = project.cardImages?.length ? project.cardImages : project.gallery;
+            const galleryCount = cardImages?.length || 1;
 
             return (
               <div
@@ -215,7 +217,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
               >
                 {/* Image Preview Container */}
                 <div className="relative h-64 w-full overflow-hidden bg-slate-900">
-                  <ProjectCardSlider images={project.gallery} fallbackImage={project.image} title={title} imageCountLabel={isRtl ? "صور" : "photos"} prevLabel={isRtl ? "الصورة السابقة" : "Previous image"} nextLabel={isRtl ? "الصورة التالية" : "Next image"} />
+                  <ProjectCardSlider images={cardImages} fallbackImage={project.image} title={title} imageCountLabel={isRtl ? "صور" : "photos"} prevLabel={isRtl ? "الصورة السابقة" : "Previous image"} nextLabel={isRtl ? "الصورة التالية" : "Next image"} />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
                   {/* Status Badge */}

@@ -29,6 +29,7 @@ export interface ProjectItem {
   descriptionEn: string;
   image: string;
   gallery?: string[];
+  cardImages?: string[];
   stages?: ProjectStage[];
   year?: string;
   scopeAr?: string;
