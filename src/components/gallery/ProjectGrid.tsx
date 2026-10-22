@@ -15,6 +15,7 @@ import {
 import { Locale, getDict } from "@/lib/i18n";
 import { projectsData, ProjectItem, ProjectCategory, ProjectStage } from "@/data/projects";
 import { Badge } from "@/components/ui/Badge";
+import { ProjectsPresentation } from "./ProjectsPresentation";
 import { Modal } from "@/components/ui/Modal";
 
 interface ProjectGridProps {
@@ -138,7 +139,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
     return item.category === activeCategory;
   });
 
-  const displayProjects = limit ? filteredProjects.slice(0, limit) : filteredProjects;
+  const displayProjects = filteredProjects;
 
   const handleOpenProject = (project: ProjectItem) => {
     setSelectedProject(project);
@@ -200,7 +201,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
 
       {/* Projects Grid */}
       {displayProjects.length > 0 ? (
-        <div className="flex snap-x snap-mandatory gap-5 overflow-x-auto pb-3 -mx-4 px-4 sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:gap-8 md:overflow-visible md:p-0 lg:grid-cols-3">
+        <ProjectsPresentation featured={Boolean(limit)} paused={Boolean(selectedProject)} isRtl={isRtl}>
           {displayProjects.map((project) => {
             const title = isRtl ? project.titleAr : project.titleEn;
             const location = isRtl ? project.locationAr : project.locationEn;
@@ -291,7 +292,7 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
               </div>
             );
           })}
-        </div>
+        </ProjectsPresentation>
       ) : (
         /* Empty State for Filters */
         <div className="text-center py-16 px-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2">

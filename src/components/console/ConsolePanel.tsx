@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { ProjectDisplaySettings } from "./ProjectDisplaySettings";
 import { ProjectManager } from "./ProjectManager";
 import { BarChart3, CalendarDays, LogOut, Moon, RefreshCw, Sun, TrendingDown, TrendingUp, Users, X } from "lucide-react";
 
@@ -317,6 +318,7 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
               <button disabled={busy} className="rounded-lg bg-[#C59341] px-6 py-3 font-bold text-[#0B111E]">{busy ? "جارٍ رفع الصورة وحفظ المشروع…" : "رفع وحفظ المشروع"}</button>
               {message && <p role="status" className={`text-sm ${theme === "light" ? "text-[#946200]" : "text-[#DEB86A]"}`}>{message}</p>}
             </form>
+            <ProjectDisplaySettings />
             <ProjectManager revision={projectsRevision} />
             {previewingImage && <ProjectImageLightbox file={previewingImage} onClose={() => setPreviewingImage(null)} />}
           </>
