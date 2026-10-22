@@ -1,8 +1,10 @@
 "use client";
-import { Children, ReactNode, useEffect, useState } from "react";
+import { Children, ReactNode, useEffect, useRef, useState } from "react";
 export function ProjectsPresentation({ children, featured, paused, isRtl }: { children: ReactNode; featured: boolean; paused: boolean; isRtl: boolean }) {
   const cards = Children.toArray(children);
   const [mode, setMode] = useState("grid");
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(0);
   const [index, setIndex] = useState(0);
   const [animate, setAnimate] = useState(true);
   const [hovered, setHovered] = useState(false);
@@ -29,6 +31,23 @@ export function ProjectsPresentation({ children, featured, paused, isRtl }: { ch
     const timer = window.setInterval(() => setIndex(current => current >= cards.length ? current : current + 1), 4500);
     return () => window.clearInterval(timer);
   }, [carousel, cards.length, paused, hovered, focused, stopped, reduced, visible]);
+  useEffect(() => {
+    if (!carousel || !trackRef.current) return;
+    const track = trackRef.current;
+    const measure = () => {
+      const slide = track.firstElementChild as HTMLElement | null;
+      if (slide) setStep(slide.getBoundingClientRect().width + parseFloat(getComputedStyle(track).columnGap || "0"));
+    };
+    const observer = new ResizeObserver(measure);
+    observer.observe(track);
+    return () => observer.disconnect();
+  }, [carousel]);
+  // Recover even if the browser cancels transitionend during resize or tab changes.
+  useEffect(() => {
+    if (index < cards.length) return;
+    const timer = window.setTimeout(() => { setAnimate(false); setIndex(0); }, 1100);
+    return () => window.clearTimeout(timer);
+  }, [index, cards.length]);
   function finishTransition() {
     if (index < cards.length) return;
     setAnimate(false); setIndex(0);
@@ -42,7 +61,7 @@ export function ProjectsPresentation({ children, featured, paused, isRtl }: { ch
   if (!carousel) return <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8 lg:grid-cols-3 [&>div]:!min-w-0 [&>div]:!max-w-none">{children}</div>;
   const next = () => { if (index >= cards.length) return; if (reduced) setIndex(current => (current + 1) % cards.length); else setIndex(current => current + 1); };
   return <section aria-roledescription={isRtl ? "عرض شرائح المشاريع" : "Project carousel"} aria-label={isRtl ? "مشاريع سبارك" : "Spark projects"} onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)} onFocusCapture={() => setFocused(true)} onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false); }}>
-    <div className="overflow-hidden py-2"><div dir="ltr" className={"projects-carousel-track " + (animate && !reduced ? "projects-carousel-animated" : "")} style={{ transform: `translateX(calc(-1 * ${index} * (100% + 2rem) / var(--projects-visible)))` }} onTransitionEnd={event => { if (event.target === event.currentTarget) finishTransition(); }}>
+    <div className="overflow-hidden py-2"><div ref={trackRef} dir="ltr" className={"projects-carousel-track " + (animate && !reduced ? "projects-carousel-animated" : "")} style={{ transform: `translate3d(${-index * step}px, 0, 0)` }} onTransitionEnd={event => { if (event.target === event.currentTarget && event.propertyName === "transform") finishTransition(); }}>
       {[...cards, ...cards.slice(0, 3)].map((card, position) => <div key={position} dir={isRtl ? "rtl" : "ltr"} className="projects-carousel-slide">{card}</div>)}
     </div></div>
     <div className="mt-5 flex items-center justify-center gap-3"><button type="button" onClick={() => setStopped(current => !current)} className="rounded-lg border border-[#C59341] px-4 py-2 text-sm text-[#0B111E]">{reduced ? (isRtl ? "عرض يدوي" : "Manual mode") : stopped ? (isRtl ? "تشغيل الحركة" : "Play") : (isRtl ? "إيقاف الحركة" : "Pause")}</button><span className="text-sm text-slate-600" aria-live="polite">{index % cards.length + 1} / {cards.length}</span><button type="button" onClick={next} className="rounded-lg bg-[#C59341] px-4 py-2 text-sm font-bold text-[#0B111E]">{isRtl ? "التالي ←" : "Next ←"}</button></div>

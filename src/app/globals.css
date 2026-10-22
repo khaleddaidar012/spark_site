@@ -452,7 +452,7 @@ body:has(.spark-console-page) > aside {
 
 
 .projects-carousel-track { --projects-visible: 1; display: flex; width: 100%; gap: 2rem; will-change: transform; }
-.projects-carousel-animated { transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1); }
+.projects-carousel-animated { transition: transform 900ms cubic-bezier(0.45, 0, 0.2, 1); }
 .projects-carousel-slide { flex: 0 0 calc((100% - (var(--projects-visible) - 1) * 2rem) / var(--projects-visible)); min-width: 0; display: flex; }
 .projects-carousel-slide > div { min-width: 0 !important; max-width: none !important; width: 100%; }
 @media (min-width: 768px) { .projects-carousel-track { --projects-visible: 2; } }
