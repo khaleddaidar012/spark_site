@@ -102,14 +102,14 @@ export function ProjectGrid({ locale, limit }: ProjectGridProps) {
             category: row.category ?? local?.category ?? "residential",
             status: local?.status ?? "completed",
             titleAr: row.title,
-            titleEn: local?.titleEn ?? row.title,
+            titleEn: local?.titleAr === row.title ? local.titleEn : row.title,
             locationAr: row.location || local?.locationAr || "مشروع سبارك",
             locationEn: row.location || local?.locationEn || "Spark Project",
             descriptionAr: row.description,
-            descriptionEn: local?.descriptionEn ?? row.description,
+            descriptionEn: local?.descriptionAr === row.description ? local.descriptionEn : row.description,
             image: row.images?.[0] ?? row.image,
             cardImages: row.images?.length ? row.images : undefined,
-            year: row.year || local?.year,
+            year: row.year ?? local?.year,
             gallery: row.images?.length
               ? [...row.images, ...(row.stagesConfigured ? (row.stages ?? []).flatMap((stage) => stage.images?.length ? stage.images : [stage.image]) : [])].filter((image, index, images) => images.indexOf(image) === index)
               : row.stagesConfigured ? (row.stages?.length ? row.stages.flatMap((stage) => stage.images?.length ? stage.images : [stage.image]) : [row.image]) : local?.gallery ?? [row.image],

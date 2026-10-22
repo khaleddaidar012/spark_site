@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { ProjectManager } from "./ProjectManager";
 import { BarChart3, CalendarDays, LogOut, Moon, RefreshCw, Sun, TrendingDown, TrendingUp, Users, X } from "lucide-react";
 
 type Counts = {
@@ -124,6 +125,7 @@ function growth(current: number, previous: number) {
 }
 
 export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authenticated: boolean }) {
+  const [projectsRevision, setProjectsRevision] = useState(0);
   const [authenticated, setAuthenticated] = useState(initiallyAuthenticated);
   const [password, setPassword] = useState("");
   const [counts, setCounts] = useState<Counts>({ daily: 0, previousDaily: 0, weekly: 0, previousWeekly: 0, monthly: 0, previousMonthly: 0, trend: [] });
@@ -225,6 +227,7 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
     const result = await response.json();
     setBusy(false);
     if (!response.ok) { setMessage(result.error ?? "تعذر إضافة المشروع"); return; }
+    setProjectsRevision(current => current + 1);
     formElement.reset();
     setProjectImages([]);
     setMessage("تم حفظ المشروع وسيظهر في المعرض.");
@@ -317,6 +320,7 @@ export function ConsolePanel({ authenticated: initiallyAuthenticated }: { authen
               <button disabled={busy} className="rounded-lg bg-[#C59341] px-6 py-3 font-bold text-[#0B111E]">{busy ? "جارٍ رفع الصورة وحفظ المشروع…" : "رفع وحفظ المشروع"}</button>
               {message && <p role="status" className={`text-sm ${theme === "light" ? "text-[#946200]" : "text-[#DEB86A]"}`}>{message}</p>}
             </form>
+            <ProjectManager revision={projectsRevision} />
             {previewingImage && <ProjectImageLightbox file={previewingImage} onClose={() => setPreviewingImage(null)} />}
           </>
         )}

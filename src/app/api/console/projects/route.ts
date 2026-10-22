@@ -27,11 +27,29 @@ async function validateImage(file: FormDataEntryValue | null) {
   return { bytes, extension, contentType: file.type };
 }
 
-export async function POST(request: Request) {
+type StoredProject = { id: string; image: string; project_images: string; stages: string };
+
+export async function POST(request: Request) { return saveProject(request, false); }
+export async function PATCH(request: Request) { return saveProject(request, true); }
+
+async function saveProject(request: Request, editing: boolean) {
   if (!(await hasConsoleSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (!sameOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
   const form = await request.formData().catch(() => null);
   if (!form) return NextResponse.json({ error: "بيانات النموذج غير صالحة." }, { status: 400 });
+  const id = String(form.get("id") ?? "");
+  let existing: StoredProject | null = null;
+  let keptImages: string[] = [];
+  if (editing) {
+    existing = await getDatabase().prepare("SELECT id, image, project_images, stages FROM projects WHERE id = ?").bind(id).first<StoredProject>();
+    if (!existing) return NextResponse.json({ error: "المشروع غير موجود" }, { status: 404 });
+    try {
+      const requested: unknown = JSON.parse(String(form.get("existingImages") ?? "[]"));
+      const allowed = new Set([existing.image, ...JSON.parse(existing.project_images)]);
+      if (!Array.isArray(requested) || requested.some((image) => typeof image !== "string" || !allowed.has(image))) throw new Error();
+      keptImages = [...new Set(requested)] as string[];
+    } catch { return NextResponse.json({ error: "صور المشروع غير صالحة" }, { status: 400 }); }
+  }
   const title = String(form.get("title") ?? "").trim();
   const location = String(form.get("location") ?? "").trim();
   const year = String(form.get("year") ?? "").trim();
@@ -44,7 +62,7 @@ export async function POST(request: Request) {
   const stageFiles = stageTitles.map((_, index) => form.getAll(`stageImages-${index}`));
   const totalStageImages = stageFiles.reduce((total, files) => total + files.length, 0);
   const stageCount = stageTitles.length;
-  if (!title || title.length > 160 || location.length > 120 || !validYear || !description || description.length > 2000 || !categories.has(category) || projectImageFiles.length < 1 || projectImageFiles.length > maxProjectImages || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount || stageFiles.some((files) => files.length < 1 || files.length > maxImagesPerStage) || totalStageImages > maxStageImagesPerProject) {
+  if (!title || title.length > 160 || location.length > 120 || !validYear || !description || description.length > 2000 || !categories.has(category) || projectImageFiles.length + keptImages.length < 1 || projectImageFiles.length + keptImages.length > maxProjectImages || stageCount > 12 || stageDescriptions.length !== stageCount || stageFiles.length !== stageCount || stageFiles.some((files) => files.length < 1 || files.length > maxImagesPerStage) || totalStageImages > maxStageImagesPerProject) {
     return NextResponse.json({ error: "أدخل اسم المشروع ووصفه واختر من صورة إلى 16 صورة صالحة للمشروع. البيانات الأخرى اختيارية." }, { status: 400 });
   }
   const stageText = stageTitles.map((value, index) => ({ title: String(value).trim(), description: String(stageDescriptions[index]).trim() }));
@@ -64,17 +82,24 @@ export async function POST(request: Request) {
       return `/api/uploads/${key}`;
     };
     stage = "رفع صور المشروع ومراحله";
-    const [coverImage, ...otherProjectAndPhaseUrls] = await Promise.all([...projectImages, ...phaseImages.flatMap((images) => images)].map(upload));
-    const projectImageUrls = [coverImage, ...otherProjectAndPhaseUrls.slice(0, projectImages.length - 1)];
-    const flatPhaseUrls = otherProjectAndPhaseUrls.slice(projectImages.length - 1);
+    const uploadedUrls = await Promise.all([...projectImages, ...phaseImages.flatMap((images) => images)].map(upload));
+    const projectImageUrls = [...keptImages, ...uploadedUrls.slice(0, projectImages.length)];
+    const coverImage = projectImageUrls[0];
+    const flatPhaseUrls = uploadedUrls.slice(projectImages.length);
     let nextPhaseUrl = 0;
-    const projectId = crypto.randomUUID();
+    const projectId = existing?.id ?? crypto.randomUUID();
     const stages = stageText.map((text, index) => {
       const images = flatPhaseUrls.slice(nextPhaseUrl, nextPhaseUrl + phaseImages[index].length);
       nextPhaseUrl += phaseImages[index].length;
       return { stageNumber: index + 1, titleAr: text.title, titleEn: text.title, descriptionAr: text.description, descriptionEn: text.description, image: images[0], images };
     });
     stage = "حفظ بيانات المشروع في D1";
+    if (existing) {
+      await getDatabase().prepare("UPDATE projects SET title = ?, description = ?, image = ?, project_images = ?, category = ?, location = ?, year = ? WHERE id = ?")
+        .bind(title, description, coverImage, JSON.stringify(projectImageUrls), category, location, year, projectId).run();
+      await cleanupImages([existing.image, ...JSON.parse(existing.project_images)]).catch(console.error);
+      return NextResponse.json({ ok: true, id: projectId });
+    }
     await getDatabase().prepare("INSERT INTO projects (id, title, description, image, project_images, category, stages, stages_configured, location, year) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)")
       .bind(projectId, title, description, coverImage, JSON.stringify(projectImageUrls), category, JSON.stringify(stages), location, year).run();
     return NextResponse.json({ ok: true, id: projectId }, { status: 201 });
@@ -84,4 +109,28 @@ export async function POST(request: Request) {
     const message = error instanceof Error && stage === "التحقق من الصور" ? error.message : `تعذر إكمال ${stage}. راجع إعدادات Cloudflare المحلية.`;
     return NextResponse.json({ error: message }, { status: stage === "التحقق من الصور" ? 400 : 503 });
   }
+}
+
+async function cleanupImages(images: string[]) {
+  for (const image of new Set(images)) {
+    if (!/^\/api\/uploads\/[0-9a-f-]{36}\.(jpg|png|webp|avif)$/i.test(image)) continue;
+    await getDatabase().prepare("DELETE FROM uploaded_images WHERE image_key = ? AND NOT EXISTS (SELECT 1 FROM projects WHERE image = ? OR instr(project_images, ?) > 0 OR instr(stages, ?) > 0)")
+      .bind(image.slice("/api/uploads/".length), image, image, image).run();
+  }
+}
+
+export async function DELETE(request: Request) {
+  if (!(await hasConsoleSession())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!sameOrigin(request)) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });
+  const body = await request.json().catch(() => null);
+  if (typeof body?.id !== "string" || !body.id) return NextResponse.json({ error: "المشروع غير صالح" }, { status: 400 });
+  try {
+    const db = getDatabase();
+    const project = await db.prepare("SELECT id, image, project_images, stages FROM projects WHERE id = ?").bind(body.id).first<StoredProject>();
+    if (!project) return NextResponse.json({ error: "المشروع غير موجود" }, { status: 404 });
+    await db.prepare("DELETE FROM projects WHERE id = ?").bind(body.id).run();
+    const stages = JSON.parse(project.stages) as { image: string; images?: string[] }[];
+    await cleanupImages([project.image, ...JSON.parse(project.project_images), ...stages.flatMap(stage => stage.images?.length ? stage.images : [stage.image])]).catch(console.error);
+    return NextResponse.json({ ok: true });
+  } catch { return NextResponse.json({ error: "تعذر حذف المشروع. حاول مرة أخرى." }, { status: 503 }); }
 }
