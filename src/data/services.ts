@@ -12,7 +12,7 @@ export const servicesData: ServiceItem[] = [
     id: "design",
     slug: "engineering-design",
     iconName: "Compass",
-    image: "/assets/services/design.jpg",
+    image: "/assets/services/design-office.jpg",
   },
   {
     id: "construction",

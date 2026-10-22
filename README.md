@@ -24,3 +24,6 @@ The analytics tracker records public page views with a persistent anonymous brow
 ## Local development
 
 Run `npm run dev` for Next.js development. `npm run lint` checks source formatting and common issues.
+
+## Image credits
+Engineering design service photo: Thirdman / Pexels (https://www.pexels.com/photo/5582599/).
