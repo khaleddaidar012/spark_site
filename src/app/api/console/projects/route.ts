@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getDatabase, getImagesBucket } from "@/lib/cloudflare";
+import { getDatabase } from "@/lib/cloudflare";
+import { storeImage, deleteImage } from "@/lib/image-storage";
 import { hasConsoleSession, sameOrigin } from "@/lib/console-auth";
 
 export const dynamic = "force-dynamic";
@@ -51,17 +52,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "أدخل عنوانًا ووصفًا صالحين لكل مرحلة." }, { status: 400 });
   }
 
-  let bucket: ReturnType<typeof getImagesBucket> | undefined;
   const keys: string[] = [];
   let stage = "التحقق من الصور";
   try {
     const projectImages = await Promise.all(projectImageFiles.map(validateImage));
     const phaseImages = await Promise.all(stageFiles.map((files) => Promise.all(files.map(validateImage))));
-    bucket = getImagesBucket();
     const upload = async (image: Awaited<ReturnType<typeof validateImage>>) => {
       const key = `${crypto.randomUUID()}.${image.extension}`;
       keys.push(key);
-      await bucket!.put(key, image.bytes, { httpMetadata: { contentType: image.contentType, cacheControl: "public, max-age=31536000, immutable" } });
+      await storeImage(key, image.bytes, image.contentType);
       return `/api/uploads/${key}`;
     };
     stage = "رفع صور المشروع ومراحله";
@@ -81,7 +80,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, id: projectId }, { status: 201 });
   } catch (error) {
     console.error(`Project creation failed during ${stage}.`, error);
-    await Promise.allSettled(keys.map((key) => bucket?.delete(key)));
+    await Promise.allSettled(keys.map((key) => deleteImage(key)));
     const message = error instanceof Error && stage === "التحقق من الصور" ? error.message : `تعذر إكمال ${stage}. راجع إعدادات Cloudflare المحلية.`;
     return NextResponse.json({ error: message }, { status: stage === "التحقق من الصور" ? 400 : 503 });
   }

@@ -1,4 +1,4 @@
-import { getImagesBucket } from "@/lib/cloudflare";
+import { readImage } from "@/lib/image-storage";
 
 export const dynamic = "force-dynamic";
 
@@ -15,15 +15,14 @@ export async function GET(_request: Request, { params }: { params: Promise<{ key
   if (!match) return new Response("Not found", { status: 404 });
 
   try {
-    const object = await getImagesBucket().get(key);
+    const object = await readImage(key);
     if (!object?.body) return new Response("Not found", { status: 404 });
 
     const headers = new Headers({
-      "Content-Type": object.httpMetadata?.contentType ?? contentTypes[match[2].toLowerCase()],
+      "Content-Type": object.contentType ?? contentTypes[match[2].toLowerCase()],
       "Cache-Control": "public, max-age=31536000, immutable",
       "X-Content-Type-Options": "nosniff",
     });
-    if (object.httpEtag) headers.set("ETag", object.httpEtag);
     return new Response(object.body, { headers });
   } catch {
     return new Response("Image storage unavailable", { status: 503 });

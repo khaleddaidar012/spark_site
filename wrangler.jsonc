@@ -6,17 +6,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
   "images": { "binding": "IMAGES" },
-  "r2_buckets": [
-    {
-      "binding": "SPARK_IMAGES",
-      "bucket_name": "spark-site-images"
-    }
-  ],
   "d1_databases": [
     {
       "binding": "SPARK_DB",
       "database_name": "spark-site",
-      "database_id": "00000000-0000-4000-8000-000000000001",
+      "database_id": "e498db8f-bb5b-4f23-ac60-2fa721ae128d",
       "migrations_dir": "migrations"
     }
   ],

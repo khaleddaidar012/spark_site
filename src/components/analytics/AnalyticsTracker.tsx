@@ -7,7 +7,7 @@ export function AnalyticsTracker() {
   const pathname = usePathname();
   const lastTrackedPath = useRef<string | null>(null);
   useEffect(() => {
-    if (pathname.includes("spark-9f2a7c")) return;
+    if (pathname.split("/")[2] === "admin") return;
     const send = (type: "view" | "heartbeat") => {
       if (type === "heartbeat" && document.visibilityState !== "visible") return;
       void fetch("/api/analytics", {

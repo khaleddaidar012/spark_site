@@ -7,13 +7,13 @@ Next.js website for Spark Engineering & Contracting, configured for Cloudflare W
 1. Install packages with `npm install`.
 2. Create a D1 database: `npx wrangler d1 create spark-site`.
 3. Copy the returned database ID into `database_id` in `wrangler.jsonc`. The checked-in UUID is only a local-development placeholder; replace it before applying remote migrations or deploying.
-4. Create the image bucket: `npx wrangler r2 bucket create spark-site-images`.
+4. Images use D1; no R2 bucket is required.
 5. Apply the schema and initial project records: `npx wrangler d1 migrations apply spark-site --remote`.
 6. Set production secrets (use a long unique password and a separate random session secret): `npx wrangler secret put SPARK_ADMIN_PASSWORD` and `npx wrangler secret put SPARK_SESSION_SECRET`.
 7. For local work, copy `.dev.vars.example` to `.dev.vars` and replace both values. Apply a local copy of the migration with `npx wrangler d1 migrations apply spark-site --local`.
 8. Preview in the Cloudflare Workers runtime with `npm run preview`; deploy with `npm run deploy`.
 
-The private console is at `/ar/spark-9f2a7c` (or `/en/spark-9f2a7c`) and requires the `SPARK_ADMIN_PASSWORD`. The URL is intentionally unlinked and excluded from search indexing; the password and signed, HTTP-only browser-session cookie provide access control. The login form is centered on mobile and desktop.
+The private console is at `/ar/admin` (or `/en/admin`) and requires the `SPARK_ADMIN_PASSWORD`. The URL is intentionally unlinked and excluded from search indexing; the password and signed, HTTP-only browser-session cookie provide access control. The login form is centered on mobile and desktop.
 
 ## Projects and analytics
 
